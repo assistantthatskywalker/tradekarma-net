@@ -14,12 +14,12 @@ export interface EarningContext {
 }
 
 /**
- * Logarithmic earning curve.
- * Nth action earns less than first, but quality & detail multiply.
+ * Diminishing-returns earning curve (anti-farming).
+ * The Nth action earns less than the first: reward = 10 / log2(count + 2).
+ * count 0 → 10, count 1 → ~6.3, count 49 → ~1.8. Quality & detail still multiply.
  */
 export function logarithmicBase(actionCount: number): number {
-  if (actionCount === 0) return 10; // First action base
-  return 10 * Math.log(actionCount + 1) / Math.log(2); // log2 scaling
+  return 10 / Math.log2(actionCount + 2);
 }
 
 /**

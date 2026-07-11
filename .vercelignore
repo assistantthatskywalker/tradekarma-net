@@ -1,0 +1,15 @@
+node_modules
+src
+contracts
+redesign
+docs
+coverage
+.codegraph
+graphify-out
+*.md
+cka-*
+PRD-*
+package.json
+package-lock.json
+tsconfig.json
+jest.config.js
