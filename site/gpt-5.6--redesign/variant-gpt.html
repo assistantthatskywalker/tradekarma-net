@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TradeKarma — Earn Your Reputation, Never Buy It</title>
+  <meta name="description" content="TradeKarma is a positive-reinforcement token economy for e-commerce. Earn crypto tokens for honest reviews, quality products, and community participation.">
+  <!-- variant: gpt -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #0a0a0a;
+      color: #f5f5f5;
+      line-height: 1.6;
+    }
+
+    header {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 100;
+      background: rgba(10, 10, 10, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .logo span { color: #d4af37; }
+
+    .cta-button {
+      background: #d4af37;
+      color: #0a0a0a;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.25rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    .cta-button:hover {
+      background: #14b8a6;
+      transform: scale(1.05);
+    }
+
+    .cta-button:focus {
+      outline: 2px solid #d4af37;
+      outline-offset: 2px;
+    }
+
+    main { margin-top: 4rem; }
+
+    section {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 4rem 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, rgba(13, 13, 13, 0.9), rgba(20, 20, 30, 0.95)),
+                  url('assets/img/hero-bg.webp') no-repeat center / cover;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 120vh;
+      position: relative;
+    }
+
+    .hero video {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      opacity: 0.6;
+      mix-blend-mode: screen;
+      z-index: 0;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 600px;
+      margin-left: 10%;
+    }
+
+    .eyebrow {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: #14b8a6;
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2.5rem, 8vw, 4.5rem);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #d4af37 0%, #14b8a6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subheading {
+      font-size: 1.2rem;
+      color: #bbb;
+      margin-bottom: 2rem;
+      font-weight: 400;
+    }
+
+    .cta-group {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .secondary-cta {
+      background: transparent;
+      border: 2px solid #d4af37;
+      color: #d4af37;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.25rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .secondary-cta:hover {
+      background: #d4af37;
+      color: #0a0a0a;
+    }
+
+    .secondary-cta:focus {
+      outline: 2px solid #14b8a6;
+      outline-offset: 2px;
+    }
+
+    .problem-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      max-width: 1200px;
+    }
+
+    .problem-card {
+      background: rgba(20, 20, 30, 0.8);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      padding: 2rem;
+      border-radius: 0.5rem;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    .problem-card:hover {
+      border-color: #d4af37;
+      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(212, 175, 55, 0.1);
+    }
+
+    .problem-card h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      color: #14b8a6;
+    }
+
+    .tokens-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .token-card {
+      background: rgba(20, 20, 30, 0.9);
+      border: 2px solid rgba(212, 175, 55, 0.2);
+      padding: 2.5rem;
+      border-radius: 0.75rem;
+      text-align: center;
+      opacity: 0;
+      transform: scale(0.95);
+      transition: all 0.3s;
+    }
+
+    .token-card:nth-child(1) { border-color: #d4af37; }
+    .token-card:nth-child(2) { border-color: #14b8a6; }
+    .token-card:nth-child(3) { border-color: #8b5cf6; }
+
+    .token-card:hover {
+      transform: scale(1.02);
+      box-shadow: 0 0 30px rgba(212, 175, 55, 0.2);
+    }
+
+    .token-image {
+      width: 150px;
+      height: 150px;
+      margin: 0 auto 1.5rem;
+      border-radius: 50%;
+      overflow: hidden;
+      background: rgba(10, 10, 10, 0.5);
+    }
+
+    .token-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .token-ticker {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .token-card:nth-child(1) .token-ticker { color: #d4af37; }
+    .token-card:nth-child(2) .token-ticker { color: #14b8a6; }
+    .token-card:nth-child(3) .token-ticker { color: #8b5cf6; }
+
+    .token-name { font-size: 1.1rem; color: #ccc; margin-bottom: 1rem; }
+    .token-desc { color: #999; font-size: 0.95rem; line-height: 1.7; margin-bottom: 1rem; }
+
+    .earned-badge {
+      display: inline-block;
+      background: #d4af37;
+      color: #0a0a0a;
+      padding: 0.5rem 1rem;
+      border-radius: 2rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-top: 1rem;
+    }
+
+    h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 3rem;
+      letter-spacing: -0.02em;
+    }
+
+    .section-title {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .section-title .eyebrow {
+      margin-bottom: 1rem;
+    }
+
+    .mechanics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .mechanic-card {
+      background: rgba(20, 20, 30, 0.8);
+      padding: 2rem;
+      border-left: 4px solid #d4af37;
+      opacity: 0;
+      transform: translateX(-20px);
+      transition: all 0.3s;
+    }
+
+    .mechanic-card h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+      color: #14b8a6;
+    }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      counter-reset: step;
+    }
+
+    .step-card {
+      position: relative;
+      padding: 2rem 2rem 2rem 4rem;
+      background: rgba(20, 20, 30, 0.8);
+      border: 1px solid rgba(20, 184, 166, 0.3);
+      border-radius: 0.5rem;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s;
+      counter-increment: step;
+    }
+
+    .step-card::before {
+      content: counter(step);
+      position: absolute;
+      left: 1rem;
+      top: 1.5rem;
+      width: 2rem;
+      height: 2rem;
+      background: #14b8a6;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0a0a0a;
+      font-weight: 700;
+      font-family: 'Syne', sans-serif;
+    }
+
+    .step-card h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.2rem;
+      margin-bottom: 0.5rem;
+      color: #d4af37;
+    }
+
+    .roadmap-timeline {
+      max-width: 1000px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .roadmap-timeline::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(180deg, #d4af37, #14b8a6, #8b5cf6);
+    }
+
+    .phase-card {
+      margin-bottom: 3rem;
+      opacity: 0;
+      transform: translateX(20px);
+      transition: all 0.3s;
+    }
+
+    .phase-card:nth-child(even) {
+      margin-left: 52%;
+    }
+
+    .phase-card:nth-child(odd) {
+      margin-right: 52%;
+      transform: translateX(-20px);
+    }
+
+    .phase-content {
+      background: rgba(20, 20, 30, 0.9);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      position: relative;
+      z-index: 2;
+    }
+
+    .phase-content h3 {
+      font-family: 'Syne', sans-serif;
+      color: #d4af37;
+      margin-bottom: 0.5rem;
+    }
+
+    .marquee-container {
+      overflow: hidden;
+      background: rgba(212, 175, 55, 0.1);
+      padding: 1rem 0;
+      margin: 2rem 0;
+      border-top: 1px solid rgba(212, 175, 55, 0.3);
+      border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+    }
+
+    .marquee {
+      display: flex;
+      gap: 2rem;
+      animation: marquee 8s linear infinite;
+      font-family: 'Syne', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    .marquee span {
+      white-space: nowrap;
+      color: #d4af37;
+    }
+
+    .marquee span:nth-child(1) { color: #d4af37; }
+    .marquee span:nth-child(2) { color: #14b8a6; }
+    .marquee span:nth-child(3) { color: #8b5cf6; }
+
+    @keyframes marquee {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(calc(-100% - 2rem)); }
+    }
+
+    .trust-band {
+      background: rgba(212, 175, 55, 0.05);
+      padding: 3rem 2rem;
+      text-align: center;
+      border-top: 1px solid rgba(212, 175, 55, 0.3);
+      border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+    }
+
+    .trust-band h3 {
+      font-family: 'Syne', sans-serif;
+      margin-bottom: 1.5rem;
+      color: #d4af37;
+    }
+
+    .trust-points {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .trust-point {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #ccc;
+    }
+
+    footer {
+      background: rgba(10, 10, 10, 0.8);
+      padding: 3rem 2rem;
+      border-top: 1px solid rgba(212, 175, 55, 0.2);
+      text-align: center;
+      color: #999;
+    }
+
+    .email-form {
+      margin: 2rem 0;
+      display: flex;
+      gap: 0.5rem;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .email-form input {
+      flex: 1;
+      padding: 0.75rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      color: #f5f5f5;
+      border-radius: 0.25rem;
+    }
+
+    .email-form input:focus {
+      outline: 2px solid #d4af37;
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .email-form button {
+      background: #d4af37;
+      color: #0a0a0a;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.25rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    footer a {
+      color: #d4af37;
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    footer a:focus {
+      outline: 2px solid #14b8a6;
+      outline-offset: 2px;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      opacity: 0.3;
+    }
+
+    @keyframes glow {
+      0%, 100% { text-shadow: 0 0 10px rgba(212, 175, 55, 0.3), 0 0 20px rgba(20, 184, 166, 0.2); }
+      50% { text-shadow: 0 0 20px rgba(212, 175, 55, 0.6), 0 0 30px rgba(20, 184, 166, 0.4); }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+      .hero video { display: none; }
+      .marquee { animation: none; }
+    }
+
+    @media (max-width: 768px) {
+      header { padding: 1rem; }
+      .logo { font-size: 1.2rem; }
+      .hero-content { margin-left: 0; text-align: center; }
+      h1 { font-size: 2rem; }
+      .cta-group { justify-content: center; }
+      .roadmap-timeline::before { left: 20px; }
+      .phase-card:nth-child(even),
+      .phase-card:nth-child(odd) { margin-left: 60px; margin-right: 0; }
+      section { padding: 2rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">Trade<span>Karma</span></div>
+    <button class="cta-button">Join Waitlist</button>
+  </header>
+
+  <main>
+    <section class="hero">
+      <canvas id="hero-canvas"></canvas>
+      <video autoplay muted loop playsinline preload="none" poster="assets/img/hero-bg.webp">
+        <source src="assets/video/hero-loop.mp4" type="video/mp4">
+      </video>
+      <div class="hero-content">
+        <div class="eyebrow">Positive-Reinforcement Commerce</div>
+        <h1>Earn Your Reputation, Never Buy It</h1>
+        <p class="subheading">Crypto rewards for ethical trading. Every honest review, fair shipment, and helpful interaction earns you tokens you actually can't purchase.</p>
+        <div class="cta-group">
+          <button class="cta-button">Join Waitlist</button>
+          <button class="secondary-cta">Read the White Paper</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="marquee-container">
+      <div class="marquee">
+        <span>$KRUNE</span>
+        <span>$KDEX</span>
+        <span>$KSHRD</span>
+        <span>$KRUNE</span>
+        <span>$KDEX</span>
+        <span>$KSHRD</span>
+      </div>
+    </div>
+
+    <section>
+      <div style="width: 100%;">
+        <div class="section-title">
+          <div class="eyebrow">The Problem</div>
+          <h2>E-Commerce Is Broken</h2>
+        </div>
+        <div class="problem-grid">
+          <div class="problem-card">
+            <h3>Fake Reviews Everywhere</h3>
+            <p>Platforms incentivize quantity over honesty. Five-star campaigns drown out authentic feedback, making reviews worthless for real buyers.</p>
+          </div>
+          <div class="problem-card">
+            <h3>Vendors Are Disposable</h3>
+            <p>Today's trusted shop can be delisted tomorrow with no recourse. Years of reputation mean nothing if an algorithm turns against you.</p>
+          </div>
+          <div class="problem-card">
+            <h3>Communities Own Nothing</h3>
+            <p>Buyers and sellers build value, platforms capture it. You have no stake in the system you're strengthening every day.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div style="width: 100%;">
+        <div class="section-title">
+          <div class="eyebrow">The Solution</div>
+          <h2>Three Tokens. One Economy.</h2>
+        </div>
+        <div class="tokens-grid">
+          <div class="token-card">
+            <div class="token-image">
+              <img src="assets/img/rune-krune.webp" alt="KarmaRune token: gold rune glyph">
+            </div>
+            <div class="token-ticker">$KRUNE</div>
+            <div class="token-name">KarmaRune</div>
+            <div class="token-desc">Reputation. Proof you participated and contributed.</div>
+            <div class="earned-badge">Earned Only</div>
+            <p style="font-size: 0.85rem; color: #666; margin-top: 1rem;">Write reviews, help buyers, ship on time. You can never buy reputation — it only comes from being good.</p>
+          </div>
+
+          <div class="token-card">
+            <div class="token-image">
+              <img src="assets/img/rune-kdex.webp" alt="KarmaDex token: teal rune glyph">
+            </div>
+            <div class="token-ticker">$KDEX</div>
+            <div class="token-name">KarmaDex</div>
+            <div class="token-desc">Investment & Governance. Stake your belief in the project.</div>
+            <div class="earned-badge" style="background: #14b8a6;">Buy on Uniswap</div>
+            <p style="font-size: 0.85rem; color: #666; margin-top: 1rem;">Fixed supply. Governance votes. Trades on Base. The investment token for believers.</p>
+          </div>
+
+          <div class="token-card">
+            <div class="token-image">
+              <img src="assets/img/rune-kshrd.webp" alt="KarmaShard token: violet rune glyph">
+            </div>
+            <div class="token-ticker">$KSHRD</div>
+            <div class="token-name">KarmaShard</div>
+            <div class="token-desc">Yield. Earned reputation meets invested capital.</div>
+            <div class="earned-badge" style="background: #8b5cf6;">Stake to Earn</div>
+            <p style="font-size: 0.85rem; color: #666; margin-top: 1rem;">Lock KRUNE + KDEX together. Generate yield redeemable for USDC or KDEX.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div style="width: 100%;">
+        <div class="section-title">
+          <div class="eyebrow">Earning Mechanics</div>
+          <h2>Not All Actions Are Equal</h2>
+        </div>
+        <div class="mechanics-grid">
+          <div class="mechanic-card">
+            <h3>Logarithmic, Not Linear</h3>
+            <p>Your 50th review earns more than your 10th. The system rewards consistent, long-term participation, not gaming.</p>
+          </div>
+          <div class="mechanic-card">
+            <h3>Detail Multiplies Your Reward</h3>
+            <p>Photos, videos, and detailed prose earn 3–5× more KRUNE than generic one-liners. Quality always wins.</p>
+          </div>
+          <div class="mechanic-card">
+            <h3>Helpfulness Pays Retroactively</h3>
+            <p>Answers that solve problems for other buyers trigger bonus KRUNE. The more you help, the more you earn.</p>
+          </div>
+          <div class="mechanic-card">
+            <h3>First Reviews Earn 3×</h3>
+            <p>Your debut review on a new product? Bonus multiplier. We value the brave early voices that build trust.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div style="width: 100%;">
+        <div class="section-title">
+          <div class="eyebrow">How It Works</div>
+          <h2>Four Steps to Earned Trust</h2>
+        </div>
+        <div class="steps-grid">
+          <div class="step-card">
+            <h3>Browse & Buy</h3>
+            <p>Find products and vendors. Every purchase is your entry point to earning.</p>
+          </div>
+          <div class="step-card">
+            <h3>Earn $KRUNE</h3>
+            <p>Write honest reviews, help other buyers, ship on time. Watch your reputation grow.</p>
+          </div>
+          <div class="step-card">
+            <h3>Stake KRUNE + KDEX</h3>
+            <p>Once you've earned KRUNE and believed in the project, lock both tokens together.</p>
+          </div>
+          <div class="step-card">
+            <h3>Redeem or Recycle</h3>
+            <p>Generate KSHRD yield. Redeem for USDC or keep it in the system for more upside.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div style="width: 100%;">
+        <div class="section-title">
+          <div class="eyebrow">Roadmap</div>
+          <h2>From Points to Protocol</h2>
+        </div>
+        <div class="roadmap-timeline">
+          <div class="phase-card">
+            <div class="phase-content">
+              <h3>Phase 1: MVP Marketplace</h3>
+              <p><strong>Year 1:</strong> Database points, no crypto. Prove the model works.</p>
+              <p style="margin-top: 0.5rem; color: #999;">KarmaRune as on-platform points. Build trust in the mechanics.</p>
+            </div>
+          </div>
+
+          <div class="phase-card">
+            <div class="phase-content">
+              <h3>Phase 2: Tokenize & Stake</h3>
+              <p><strong>Years 2–3:</strong> KRUNE goes on-chain. KDEX launches.</p>
+              <p style="margin-top: 0.5rem; color: #999;">Migration event. Your points are now yours, portable, on Base.</p>
+            </div>
+          </div>
+
+          <div class="phase-card">
+            <div class="phase-content">
+              <h3>Phase 3: Open Protocol</h3>
+              <p><strong>Years 4–5:</strong> KSHRD yield active. Full DAO governance.</p>
+              <p style="margin-top: 0.5rem; color: #999;">The system is yours. You run it.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="trust-band">
+      <h3>Trust & Security</h3>
+      <div class="trust-points">
+        <div class="trust-point">
+          <strong>Basel, Switzerland</strong><br>Built in the heart of Swiss fintech. FINMA-aware from day one.
+        </div>
+        <div class="trust-point">
+          <strong>Start Centralized, Earn the DAO</strong><br>We run it until the community is ready. The DAO is earned like KRUNE.
+        </div>
+        <div class="trust-point">
+          <strong>Prove, Then Launch</strong><br>Database first. We prove the model works before we put anything on-chain.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div style="margin-bottom: 2rem;">
+      <p><strong>TradeKarma</strong> — Earn Your Reputation, Never Buy It</p>
+      <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem;">© 2026 TradeKarma. Basel, Switzerland.</p>
+    </div>
+    <div class="email-form">
+      <input type="email" placeholder="your@email.com" aria-label="Email for waitlist">
+      <button>Join</button>
+    </div>
+    <div style="margin-top: 2rem; display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;">
+      <a href="#whitepaper">White Paper</a>
+      <a href="https://x.com" target="_blank" rel="noopener">X / Twitter</a>
+      <a href="#discord">Discord</a>
+    </div>
+  </footer>
+
+  <script>
+    // Intersection Observer for scroll-reveal
+    const reveals = document.querySelectorAll('.problem-card, .token-card, .mechanic-card, .step-card, .phase-card');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0) translateX(0) scale(1)';
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    reveals.forEach(el => observer.observe(el));
+
+    // Canvas particle effect (embers/mist)
+    const canvas = document.getElementById('hero-canvas');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight * 0.5;
+    canvas.style.position = 'absolute';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
+    canvas.style.opacity = '0.1';
+    canvas.style.zIndex = '1';
+    canvas.style.pointerEvents = 'none';
+
+    const ctx = canvas.getContext('2d');
+    const particles = [];
+
+    class Particle {
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = Math.random() * -2;
+        this.life = Math.random() * 100 + 50;
+        this.maxLife = this.life;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy -= 0.05; // gravity-ish drift
+        this.life--;
+
+        if (this.life <= 0 || this.y < 0) {
+          return false;
+        }
+        return true;
+      }
+
+      draw() {
+        ctx.fillStyle = `rgba(212, 175, 55, ${this.life / this.maxLife * 0.5})`;
+        ctx.fillRect(this.x, this.y, 2, 2);
+      }
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (particles.length < 50) {
+        particles.push(new Particle());
+      }
+
+      particles.forEach((p, i) => {
+        if (!p.update()) {
+          particles.splice(i, 1);
+        } else {
+          p.draw();
+        }
+      });
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    // Resize canvas on window resize
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight * 0.5;
+    });
+
+    // Respect prefers-reduced-motion
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+      reveals.forEach(el => {
+        el.style.opacity = '1';
+        el.style.transform = 'none';
+      });
+    }
+  </script>
+</body>
+</html>

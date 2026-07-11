@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TradeKarma — Earn Your Reputation, Never Buy It</title>
+  <meta name="description" content="TradeKarma is a positive-reinforcement token economy for e-commerce.">
+  <style>
+    body { margin: 0; padding: 0; }
+    .design-toggle {
+      position: fixed;
+      top: 1rem;
+      right: 2rem;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: rgba(10, 10, 10, 0.95);
+      padding: 0.75rem 1rem;
+      border-radius: 2rem;
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      backdrop-filter: blur(10px);
+    }
+
+    .design-toggle label {
+      font-size: 0.85rem;
+      color: #bbb;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 50px;
+      height: 24px;
+      background: rgba(20, 20, 30, 0.8);
+      border-radius: 12px;
+      cursor: pointer;
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      transition: all 0.3s;
+    }
+
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: #d4af37;
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: left 0.3s;
+    }
+
+    input[type="checkbox"] { display: none; }
+
+    input[type="checkbox"]:checked + .toggle-switch {
+      background: rgba(20, 184, 166, 0.2);
+      border-color: #14b8a6;
+    }
+
+    input[type="checkbox"]:checked + .toggle-switch::after {
+      left: 28px;
+      background: #14b8a6;
+    }
+
+    .variant-frame {
+      display: none;
+      width: 100%;
+      height: 100%;
+    }
+
+    .variant-frame.active {
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .design-toggle {
+        top: 4rem;
+        right: 1rem;
+        font-size: 0.75rem;
+        padding: 0.5rem 0.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="design-toggle">
+    <label>
+      <span id="variant-label">Design: Opus</span>
+      <input type="checkbox" id="design-switch" aria-label="Toggle between Opus and GPT design variants">
+      <div class="toggle-switch"></div>
+    </label>
+  </div>
+
+  <div id="gpt-variant" class="variant-frame"></div>
+  <div id="opus-variant" class="variant-frame active"></div>
+
+  <script>
+    const gptFrame = document.getElementById('gpt-variant');
+    const opusFrame = document.getElementById('opus-variant');
+    const designSwitch = document.getElementById('design-switch');
+    const variantLabel = document.getElementById('variant-label');
+
+    // Load variants
+    async function loadVariants() {
+      try {
+        const gptHtml = await fetch('gpt-5.6--redesign/variant-gpt.html').then(r => r.text());
+        const opusHtml = await fetch('opus-4.8--redesign/variant-opus.html').then(r => r.text());
+
+        gptFrame.innerHTML = gptHtml;
+        opusFrame.innerHTML = opusHtml;
+
+        // Re-execute scripts in the loaded HTML
+        const gptScripts = gptFrame.querySelectorAll('script');
+        const opusScripts = opusFrame.querySelectorAll('script');
+
+        gptScripts.forEach(script => {
+          const newScript = document.createElement('script');
+          newScript.textContent = script.textContent;
+          gptFrame.appendChild(newScript);
+        });
+
+        opusScripts.forEach(script => {
+          const newScript = document.createElement('script');
+          newScript.textContent = script.textContent;
+          opusFrame.appendChild(newScript);
+        });
+      } catch (error) {
+        console.error('Failed to load variants:', error);
+      }
+    }
+
+    // Toggle handler
+    designSwitch.addEventListener('change', () => {
+      if (designSwitch.checked) {
+        gptFrame.classList.add('active');
+        opusFrame.classList.remove('active');
+        variantLabel.textContent = 'Design: GPT';
+        localStorage.setItem('tradekarma-variant', 'gpt');
+      } else {
+        gptFrame.classList.remove('active');
+        opusFrame.classList.add('active');
+        variantLabel.textContent = 'Design: Opus';
+        localStorage.setItem('tradekarma-variant', 'opus');
+      }
+    });
+
+    // Restore user preference
+    const savedVariant = localStorage.getItem('tradekarma-variant') || 'opus';
+    if (savedVariant === 'gpt') {
+      designSwitch.checked = true;
+      gptFrame.classList.add('active');
+      opusFrame.classList.remove('active');
+      variantLabel.textContent = 'Design: GPT';
+    }
+
+    // Load on page load
+    loadVariants();
+  </script>
+</body>
+</html>

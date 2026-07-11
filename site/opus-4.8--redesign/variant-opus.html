@@ -1,0 +1,953 @@
+<!doctype html>
+<!-- variant: opus -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TradeKarma — Earn Your Reputation, Never Buy It</title>
+<meta name="description" content="TradeKarma is a positive-reinforcement commerce protocol. Earn KarmaRune for honest reviews and good service — reputation you build, never buy. Basel, Switzerland." />
+<meta name="theme-color" content="#0a0a0a" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230a0a0a'/%3E%3Cpath d='M9 8v16M9 16l8-8M9 16l8 8' fill='none' stroke='%23d4af37' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+<style>
+  /* ============================================================
+     TradeKarma — "Refined Dark Ritual"
+     Swiss grid · display serif + legible sans · atmospheric depth
+     ============================================================ */
+
+  :root{
+    --bg:#0a0a0a;
+    --bg-2:#0d0c0b;
+    --panel:#121110;
+    --panel-2:#171512;
+    --line:rgba(245,243,238,0.09);
+    --line-strong:rgba(245,243,238,0.16);
+    --text:#f4f1ea;
+    --muted:#aca69c;
+    --muted-2:#7f7a71;
+    --gold:#d4af37;
+    --teal:#14b8a6;
+    --violet:#8b5cf6;
+    --gold-soft:rgba(212,175,55,0.14);
+    --teal-soft:rgba(20,184,166,0.14);
+    --violet-soft:rgba(139,92,246,0.14);
+    --maxw:1200px;
+    --pad:clamp(1.25rem, 5vw, 3rem);
+    --ease:cubic-bezier(.2,.7,.2,1);
+    --r:14px;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+    font-size:clamp(1rem,0.96rem + 0.2vw,1.08rem);
+    line-height:1.65;
+    letter-spacing:0.005em;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    overflow-x:hidden;
+  }
+
+  ::selection{background:rgba(212,175,55,0.28);color:#fff;}
+
+  a{color:inherit;text-decoration:none;}
+  img{max-width:100%;display:block;}
+  h1,h2,h3{
+    font-family:"Fraunces",Georgia,serif;
+    font-weight:500;
+    letter-spacing:-0.015em;
+    line-height:1.04;
+    margin:0;
+  }
+
+  /* --- Focus visibility --- */
+  a:focus-visible,button:focus-visible,input:focus-visible{
+    outline:2px solid var(--gold);
+    outline-offset:3px;
+    border-radius:4px;
+  }
+
+  /* --- Layout primitives --- */
+  .wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:var(--pad);}
+  .section{padding-block:clamp(4.5rem,9vw,8.5rem);position:relative;}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:0.7rem;
+    font-family:"JetBrains Mono",ui-monospace,monospace;
+    font-size:0.72rem;font-weight:600;
+    letter-spacing:0.28em;text-transform:uppercase;
+    color:var(--gold);
+    margin:0 0 1.4rem;
+  }
+  .eyebrow::before{
+    content:"";width:1.9rem;height:1px;background:linear-gradient(90deg,var(--gold),transparent);
+  }
+  .section-head{max-width:44ch;margin-bottom:clamp(2.6rem,5vw,4rem);}
+  .section-head h2{font-size:clamp(2.1rem,1.4rem + 3vw,3.6rem);}
+  .section-head p{color:var(--muted);font-size:clamp(1.05rem,1rem + 0.3vw,1.22rem);margin:1.1rem 0 0;max-width:52ch;}
+  .lede{color:var(--muted);}
+
+  /* ============================================================
+     Header
+     ============================================================ */
+  header.site{
+    position:fixed;inset:0 0 auto 0;z-index:60;
+    backdrop-filter:blur(14px) saturate(140%);
+    -webkit-backdrop-filter:blur(14px) saturate(140%);
+    background:linear-gradient(180deg,rgba(10,10,10,0.82),rgba(10,10,10,0.28));
+    border-bottom:1px solid transparent;
+    transition:border-color .4s var(--ease),background .4s var(--ease);
+  }
+  header.site.scrolled{border-bottom-color:var(--line);background:rgba(10,10,10,0.9);}
+  .nav{display:flex;align-items:center;justify-content:space-between;gap:1.5rem;height:68px;}
+  .brand{display:inline-flex;align-items:center;gap:0.7rem;font-weight:600;letter-spacing:0.01em;}
+  .brand .mark{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;flex:none;
+    background:linear-gradient(150deg,#1a1712,#0c0b0a);border:1px solid var(--line-strong);
+    box-shadow:0 0 0 1px rgba(212,175,55,0.08),0 8px 22px -12px rgba(212,175,55,0.5);}
+  .brand .mark svg{width:19px;height:19px;}
+  .brand b{font-family:"Fraunces",serif;font-weight:600;font-size:1.16rem;letter-spacing:-0.01em;}
+  .nav-links{display:flex;align-items:center;gap:2rem;}
+  .nav-links a{font-size:0.9rem;color:var(--muted);transition:color .25s var(--ease);position:relative;}
+  .nav-links a:hover{color:var(--text);}
+  .nav-links a::after{content:"";position:absolute;left:0;bottom:-6px;height:1px;width:0;background:var(--gold);transition:width .3s var(--ease);}
+  .nav-links a:hover::after{width:100%;}
+  .nav-cta{display:flex;align-items:center;gap:1.4rem;}
+
+  /* --- Buttons --- */
+  .btn{
+    --btn-accent:var(--gold);
+    display:inline-flex;align-items:center;justify-content:center;gap:0.55rem;
+    font-family:"Inter",sans-serif;font-weight:600;font-size:0.95rem;letter-spacing:0.01em;
+    padding:0.8rem 1.4rem;border-radius:999px;cursor:pointer;border:1px solid transparent;
+    transition:transform .25s var(--ease),box-shadow .3s var(--ease),background .3s var(--ease),border-color .3s var(--ease),color .3s var(--ease);
+    white-space:nowrap;
+  }
+  .btn-primary{
+    background:linear-gradient(140deg,#e7c65a,#d4af37 55%,#b4902a);
+    color:#1a1405;
+    box-shadow:0 10px 30px -12px rgba(212,175,55,0.6),inset 0 1px 0 rgba(255,255,255,0.25);
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 16px 38px -12px rgba(212,175,55,0.7),inset 0 1px 0 rgba(255,255,255,0.3);}
+  .btn-ghost{background:rgba(255,255,255,0.02);border-color:var(--line-strong);color:var(--text);}
+  .btn-ghost:hover{border-color:var(--gold);color:#fff;transform:translateY(-2px);background:rgba(212,175,55,0.06);}
+  .btn-arrow{transition:transform .3s var(--ease);}
+  .btn:hover .btn-arrow{transform:translateX(3px);}
+  .btn-sm{padding:0.62rem 1.15rem;font-size:0.9rem;}
+
+  /* ============================================================
+     Hero
+     ============================================================ */
+  .hero{position:relative;min-height:100svh;display:flex;align-items:center;overflow:hidden;isolation:isolate;}
+  .hero-media{position:absolute;inset:0;z-index:-3;}
+  .hero-media .layer{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+  .hero-bg{transform:scale(1.06);will-change:transform;}
+  #hero-video{opacity:0.34;mix-blend-mode:screen;}
+  #mist-canvas{position:absolute;inset:0;z-index:-2;width:100%;height:100%;pointer-events:none;}
+  .hero-overlay{position:absolute;inset:0;z-index:-2;background-repeat:no-repeat;background-size:cover;background-position:center;pointer-events:none;}
+  .hero-mist{mix-blend-mode:screen;opacity:0.22;}
+  .hero-lightning{mix-blend-mode:screen;opacity:0.12;}
+  .hero-scrim{
+    position:absolute;inset:0;z-index:-1;pointer-events:none;
+    background:
+      linear-gradient(90deg,rgba(10,10,10,0.95) 0%,rgba(10,10,10,0.72) 34%,rgba(10,10,10,0.16) 66%,rgba(10,10,10,0.08) 100%),
+      linear-gradient(180deg,rgba(10,10,10,0.6) 0%,transparent 24%,transparent 66%,rgba(10,10,10,0.98) 100%);
+  }
+
+  .hero-inner{padding-block:8rem 5rem;width:100%;}
+  .hero-content{max-width:38rem;}
+  .hero .eyebrow{margin-bottom:1.6rem;}
+  .hero h1{
+    font-size:clamp(2.9rem,1.6rem + 5.6vw,6rem);
+    font-weight:500;letter-spacing:-0.025em;line-height:0.98;
+  }
+  .hero h1 .em{
+    font-style:italic;font-weight:400;
+    background:linear-gradient(180deg,#f7e9a8,var(--gold));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .hero-sub{
+    color:var(--muted);font-size:clamp(1.1rem,1rem + 0.5vw,1.35rem);
+    margin:1.7rem 0 2.4rem;max-width:34ch;line-height:1.55;
+  }
+  .hero-actions{display:flex;flex-wrap:wrap;gap:1rem;align-items:center;}
+  .hero-meta{
+    display:flex;flex-wrap:wrap;gap:0.6rem 1.6rem;margin-top:2.8rem;
+    font-family:"JetBrains Mono",monospace;font-size:0.76rem;letter-spacing:0.06em;color:var(--muted-2);
+  }
+  .hero-meta span{display:inline-flex;align-items:center;gap:0.5rem;}
+  .hero-meta span::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--teal);box-shadow:0 0 10px var(--teal);}
+
+  .scroll-cue{
+    position:absolute;left:50%;bottom:1.8rem;transform:translateX(-50%);z-index:2;
+    display:flex;flex-direction:column;align-items:center;gap:0.6rem;
+    font-family:"JetBrains Mono",monospace;font-size:0.66rem;letter-spacing:0.24em;text-transform:uppercase;color:var(--muted-2);
+  }
+  .scroll-cue .rail{width:1px;height:44px;background:linear-gradient(180deg,var(--gold),transparent);position:relative;overflow:hidden;}
+  .scroll-cue .rail::after{content:"";position:absolute;top:-40%;left:0;width:100%;height:40%;background:var(--gold);animation:cue 2.4s var(--ease) infinite;}
+  @keyframes cue{0%{top:-45%;opacity:0;}30%{opacity:1;}100%{top:110%;opacity:0;}}
+
+  /* ============================================================
+     Problem
+     ============================================================ */
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(1rem,2vw,1.6rem);}
+  .card{
+    position:relative;background:linear-gradient(180deg,var(--panel),var(--bg-2));
+    border:1px solid var(--line);border-radius:var(--r);padding:clamp(1.6rem,3vw,2.2rem);
+    transition:transform .4s var(--ease),border-color .4s var(--ease),box-shadow .4s var(--ease);
+    overflow:hidden;
+  }
+  .card::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+    background:radial-gradient(120% 80% at 50% -10%,rgba(255,255,255,0.04),transparent 60%);}
+  .problem-card:hover{transform:translateY(-5px);border-color:var(--line-strong);box-shadow:0 24px 50px -24px rgba(0,0,0,0.8);}
+  .card .idx{font-family:"JetBrains Mono",monospace;font-size:0.72rem;letter-spacing:0.2em;color:var(--muted-2);}
+  .card .ic{width:44px;height:44px;margin:1.4rem 0 1.3rem;color:var(--gold);display:grid;place-items:center;
+    border:1px solid var(--line-strong);border-radius:11px;background:rgba(212,175,55,0.06);}
+  .card .ic svg{width:22px;height:22px;}
+  .card h3{font-size:1.42rem;margin-bottom:0.6rem;}
+  .card p{color:var(--muted);margin:0;font-size:0.99rem;}
+
+  /* ============================================================
+     Solution — token cards
+     ============================================================ */
+  .solution{background:
+    radial-gradient(80% 50% at 80% 0%,rgba(139,92,246,0.06),transparent 60%),
+    radial-gradient(70% 50% at 10% 100%,rgba(20,184,166,0.05),transparent 60%);}
+  .token-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(1rem,2vw,1.6rem);align-items:stretch;}
+  .token{
+    --accent:var(--gold);--accent-soft:var(--gold-soft);
+    position:relative;display:flex;flex-direction:column;
+    background:linear-gradient(180deg,var(--panel),var(--bg-2));
+    border:1px solid var(--line);border-radius:18px;padding:clamp(1.7rem,2.6vw,2.3rem);
+    transition:transform .45s var(--ease),border-color .45s var(--ease),box-shadow .45s var(--ease);
+    overflow:hidden;
+  }
+  .token.krune{--accent:var(--gold);--accent-soft:var(--gold-soft);}
+  .token.kdex{--accent:var(--teal);--accent-soft:var(--teal-soft);}
+  .token.kshrd{--accent:var(--violet);--accent-soft:var(--violet-soft);}
+  .token::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+    box-shadow:inset 0 0 0 1px transparent;transition:box-shadow .45s var(--ease);}
+  .token:hover{transform:translateY(-7px);border-color:transparent;
+    box-shadow:0 30px 60px -28px rgba(0,0,0,0.9),0 0 0 1px var(--accent-soft);}
+  .token:hover::after{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 42%,transparent),inset 0 0 42px -18px var(--accent);}
+  .token .glow{position:absolute;top:-30%;right:-20%;width:60%;height:60%;pointer-events:none;
+    background:radial-gradient(circle,var(--accent-soft),transparent 70%);opacity:0.6;filter:blur(6px);
+    transition:opacity .5s var(--ease);}
+  .token:hover .glow{opacity:1;}
+  .token-rune{width:92px;height:92px;object-fit:cover;border-radius:16px;margin-bottom:1.4rem;
+    border:1px solid color-mix(in srgb,var(--accent) 34%,transparent);
+    box-shadow:0 16px 36px -16px color-mix(in srgb,var(--accent) 60%,transparent),inset 0 0 0 1px rgba(255,255,255,0.05);
+    animation:floatY 7s ease-in-out infinite;}
+  .token:nth-child(2) .token-rune{animation-delay:-2.3s;}
+  .token:nth-child(3) .token-rune{animation-delay:-4.6s;}
+  .token-ticker{font-family:"JetBrains Mono",monospace;font-weight:600;font-size:1.05rem;letter-spacing:0.04em;color:var(--accent);}
+  .token h3{font-size:1.7rem;margin:0.2rem 0 0.1rem;}
+  .token .role{font-size:0.82rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted-2);font-family:"JetBrains Mono",monospace;margin-bottom:1rem;}
+  .token p{color:var(--muted);margin:0 0 1.2rem;font-size:0.99rem;}
+  .token .how{margin-top:auto;padding-top:1.1rem;border-top:1px solid var(--line);}
+  .token .how dt{font-size:0.72rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted-2);margin-bottom:0.35rem;font-family:"JetBrains Mono",monospace;}
+  .token .how dd{margin:0;color:var(--text);font-size:0.95rem;}
+  .token .how dd b{color:var(--accent);font-weight:600;}
+  .earned-badge{
+    display:inline-flex;align-items:center;gap:0.5rem;margin-bottom:1rem;
+    padding:0.4rem 0.85rem;border-radius:999px;font-family:"JetBrains Mono",monospace;
+    font-size:0.72rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;
+    color:var(--gold);background:rgba(212,175,55,0.1);border:1px solid rgba(212,175,55,0.35);
+    animation:glowPulse 3.4s ease-in-out infinite;
+  }
+  .earned-badge svg{width:13px;height:13px;}
+
+  .anti-whale{
+    margin-top:clamp(2rem,4vw,3rem);
+    display:grid;grid-template-columns:auto 1fr;gap:clamp(1.2rem,3vw,2.4rem);align-items:center;
+    background:linear-gradient(120deg,rgba(212,175,55,0.06),rgba(139,92,246,0.05));
+    border:1px solid var(--line);border-radius:18px;padding:clamp(1.6rem,3vw,2.4rem);
+  }
+  .anti-whale .kicker{font-family:"Fraunces",serif;font-style:italic;font-size:clamp(2.4rem,5vw,4rem);
+    line-height:1;color:var(--gold);white-space:nowrap;}
+  .anti-whale p{margin:0;color:var(--text);font-size:clamp(1.05rem,1rem + 0.4vw,1.28rem);line-height:1.5;}
+  .anti-whale p b{color:#fff;}
+  .anti-whale .accent{color:var(--violet);font-weight:600;}
+
+  /* ============================================================
+     Earning mechanics
+     ============================================================ */
+  .earn{background:var(--bg-2);border-block:1px solid var(--line);}
+  .earn-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;}
+  .earn-item{background:linear-gradient(180deg,var(--panel),var(--bg-2));padding:clamp(1.7rem,3vw,2.6rem);transition:background .4s var(--ease);}
+  .earn-item:hover{background:var(--panel-2);}
+  .earn-item .num{font-family:"Fraunces",serif;font-size:2.6rem;font-weight:500;color:var(--gold);line-height:1;}
+  .earn-item h3{font-size:1.4rem;margin:1rem 0 0.6rem;}
+  .earn-item p{color:var(--muted);margin:0;font-size:0.99rem;}
+  .earn-item p b{color:var(--text);font-weight:600;}
+  .earn-item .tag{display:inline-block;margin-top:1rem;font-family:"JetBrains Mono",monospace;font-size:0.74rem;
+    letter-spacing:0.08em;color:var(--teal);padding:0.28rem 0.7rem;border:1px solid rgba(20,184,166,0.3);border-radius:999px;}
+
+  /* ============================================================
+     How it works — steps
+     ============================================================ */
+  .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(1rem,2vw,1.4rem);}
+  .step{position:relative;padding-top:2.6rem;}
+  .step .line{position:absolute;top:1.05rem;left:0;right:0;height:1px;background:var(--line-strong);}
+  .step .dot{position:absolute;top:0.4rem;left:0;width:1.3rem;height:1.3rem;border-radius:50%;
+    background:var(--bg);border:1px solid var(--gold);display:grid;place-items:center;}
+  .step .dot::after{content:"";width:0.42rem;height:0.42rem;border-radius:50%;background:var(--gold);box-shadow:0 0 12px var(--gold);}
+  .step .n{font-family:"JetBrains Mono",monospace;font-size:0.74rem;letter-spacing:0.2em;color:var(--muted-2);}
+  .step h3{font-size:1.28rem;margin:0.5rem 0 0.5rem;}
+  .step p{color:var(--muted);margin:0;font-size:0.94rem;}
+
+  /* ============================================================
+     Roadmap
+     ============================================================ */
+  .roadmap{background:radial-gradient(70% 60% at 90% 10%,rgba(20,184,166,0.05),transparent 60%);}
+  .phases{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(1rem,2vw,1.6rem);}
+  .phase{position:relative;background:linear-gradient(180deg,var(--panel),var(--bg-2));border:1px solid var(--line);
+    border-radius:var(--r);padding:clamp(1.7rem,3vw,2.3rem);transition:transform .4s var(--ease),border-color .4s var(--ease);}
+  .phase:hover{transform:translateY(-5px);border-color:var(--line-strong);}
+  .phase .ph{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;margin-bottom:1.2rem;}
+  .phase .ph .lbl{font-family:"JetBrains Mono",monospace;font-size:0.74rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted-2);}
+  .phase .ph .st{font-family:"JetBrains Mono",monospace;font-size:0.7rem;letter-spacing:0.08em;padding:0.24rem 0.6rem;border-radius:999px;border:1px solid var(--line-strong);color:var(--muted);}
+  .phase.p1 .st{color:var(--gold);border-color:rgba(212,175,55,0.35);}
+  .phase.p2 .st{color:var(--teal);border-color:rgba(20,184,166,0.35);}
+  .phase.p3 .st{color:var(--violet);border-color:rgba(139,92,246,0.35);}
+  .phase h3{font-size:1.5rem;margin-bottom:0.7rem;}
+  .phase p{color:var(--muted);margin:0;font-size:0.97rem;}
+  .phase .bar{height:3px;border-radius:2px;margin-top:1.6rem;background:var(--line);overflow:hidden;}
+  .phase .bar span{display:block;height:100%;border-radius:2px;}
+  .phase.p1 .bar span{width:100%;background:var(--gold);}
+  .phase.p2 .bar span{width:55%;background:var(--teal);}
+  .phase.p3 .bar span{width:18%;background:var(--violet);}
+
+  /* ============================================================
+     Trust band
+     ============================================================ */
+  .trust{background:linear-gradient(180deg,var(--bg-2),var(--bg));border-top:1px solid var(--line);}
+  .trust-inner{display:grid;grid-template-columns:1.1fr 1fr;gap:clamp(2rem,5vw,4rem);align-items:center;}
+  .trust h2{font-size:clamp(1.9rem,1.4rem + 2.4vw,3rem);max-width:16ch;}
+  .trust h2 .u{color:var(--gold);font-style:italic;font-weight:400;}
+  .trust-points{display:grid;gap:0.4rem;}
+  .trust-points li{list-style:none;display:flex;gap:1rem;padding:1.1rem 0;border-bottom:1px solid var(--line);}
+  .trust-points li:last-child{border-bottom:0;}
+  .trust-points .tk{flex:none;width:26px;height:26px;border-radius:7px;display:grid;place-items:center;
+    background:rgba(20,184,166,0.1);border:1px solid rgba(20,184,166,0.3);color:var(--teal);}
+  .trust-points .tk svg{width:14px;height:14px;}
+  .trust-points strong{display:block;font-weight:600;color:var(--text);}
+  .trust-points span{color:var(--muted);font-size:0.94rem;}
+
+  /* ============================================================
+     Footer
+     ============================================================ */
+  footer.site{background:var(--bg);border-top:1px solid var(--line);padding-block:clamp(3.5rem,6vw,5.5rem) 2.5rem;}
+  .foot-top{display:grid;grid-template-columns:1.2fr 1fr;gap:clamp(2rem,5vw,4rem);align-items:start;}
+  .foot-brand .brand{margin-bottom:1.2rem;}
+  .foot-brand p{color:var(--muted);max-width:34ch;margin:0 0 0.4rem;}
+  .foot-tag{font-family:"Fraunces",serif;font-style:italic;font-size:1.4rem;color:var(--text);margin-top:1rem;}
+  .waitlist{background:linear-gradient(180deg,var(--panel),var(--bg-2));border:1px solid var(--line);border-radius:16px;padding:clamp(1.5rem,3vw,2rem);}
+  .waitlist h3{font-family:"Fraunces",serif;font-size:1.35rem;margin-bottom:0.4rem;}
+  .waitlist p{color:var(--muted);font-size:0.94rem;margin:0 0 1.2rem;}
+  .wl-row{display:flex;gap:0.7rem;flex-wrap:wrap;}
+  .wl-row input{
+    flex:1 1 12rem;min-width:0;background:var(--bg);border:1px solid var(--line-strong);color:var(--text);
+    padding:0.8rem 1rem;border-radius:999px;font:inherit;font-size:0.95rem;transition:border-color .3s var(--ease);
+  }
+  .wl-row input::placeholder{color:var(--muted-2);}
+  .wl-row input:focus{border-color:var(--gold);}
+  .wl-note{margin:0.9rem 0 0;font-size:0.9rem;color:var(--teal);font-family:"JetBrains Mono",monospace;letter-spacing:0.02em;}
+  .foot-bottom{display:flex;flex-wrap:wrap;gap:1.4rem;align-items:center;justify-content:space-between;
+    margin-top:clamp(2.5rem,5vw,4rem);padding-top:2rem;border-top:1px solid var(--line);}
+  .foot-links{display:flex;flex-wrap:wrap;gap:1.6rem;}
+  .foot-links a{color:var(--muted);font-size:0.9rem;transition:color .25s var(--ease);}
+  .foot-links a:hover{color:var(--gold);}
+  .foot-bottom small{color:var(--muted-2);font-size:0.85rem;font-family:"JetBrains Mono",monospace;letter-spacing:0.02em;}
+
+  /* ============================================================
+     Ambient keyframes
+     ============================================================ */
+  @keyframes floatY{0%,100%{transform:translateY(0);}50%{transform:translateY(-9px);}}
+  @keyframes glowPulse{0%,100%{opacity:0.7;box-shadow:0 0 0 0 rgba(212,175,55,0);}50%{opacity:1;box-shadow:0 0 18px -6px rgba(212,175,55,0.6);}}
+
+  /* --- Scroll reveal --- */
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity .8s var(--ease),transform .8s var(--ease);transition-delay:var(--d,0ms);}
+  .reveal.in{opacity:1;transform:none;}
+
+  /* ============================================================
+     Responsive
+     ============================================================ */
+  @media (max-width:900px){
+    .grid-3,.token-grid,.phases{grid-template-columns:1fr;}
+    .earn-grid{grid-template-columns:1fr;}
+    .steps{grid-template-columns:repeat(2,1fr);row-gap:2.4rem;}
+    .trust-inner,.foot-top,.anti-whale{grid-template-columns:1fr;}
+    .anti-whale{text-align:center;}
+    .anti-whale .kicker{white-space:normal;}
+    .nav-links{display:none;}
+  }
+  @media (max-width:760px){
+    /* No room for a left-dark/right-bright split — darken uniformly for legibility */
+    .hero-scrim{background:
+      linear-gradient(180deg,rgba(10,10,10,0.82) 0%,rgba(10,10,10,0.66) 42%,rgba(10,10,10,0.9) 100%);}
+    .hero-inner{padding-block:7rem 4.5rem;}
+    .hero-sub{max-width:none;}
+  }
+  @media (max-width:560px){
+    .steps{grid-template-columns:1fr;}
+    .hero-actions .btn{flex:1 1 100%;}
+    .foot-bottom{flex-direction:column;align-items:flex-start;}
+  }
+  @media (min-width:1441px){
+    :root{--maxw:1280px;}
+  }
+
+  /* ============================================================
+     Reduced motion — disable non-essential motion
+     ============================================================ */
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation:none !important;transition:none !important;scroll-behavior:auto !important;}
+    html{scroll-behavior:auto;}
+    .reveal{opacity:1 !important;transform:none !important;}
+    [data-parallax]{transform:none !important;}
+    #hero-video{display:none !important;}
+    .hero-bg{transform:none;}
+  }
+</style>
+</head>
+<body>
+
+<header class="site" id="site-header">
+  <div class="wrap nav">
+    <a class="brand" href="#top" aria-label="TradeKarma home">
+      <span class="mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" fill="none"><path d="M9 7v18M9 16l9-9M9 16l9 9" stroke="#d4af37" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <b>TradeKarma</b>
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#problem">The Problem</a>
+      <a href="#tokens">Tokens</a>
+      <a href="#how">How It Works</a>
+      <a href="#roadmap">Roadmap</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-primary btn-sm" href="#waitlist">Join Waitlist</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ===================== 1 · HERO ===================== -->
+  <section class="hero" id="hero" aria-labelledby="hero-title">
+    <div class="hero-media" aria-hidden="true">
+      <img class="layer hero-bg" data-parallax="0.12" src="assets/img/hero-bg.webp" alt="" fetchpriority="high" decoding="async" />
+      <video class="layer" id="hero-video" muted loop playsinline preload="none" poster="assets/img/hero-bg.webp">
+        <source src="assets/video/hero-loop.mp4" type="video/mp4" />
+      </video>
+    </div>
+    <canvas id="mist-canvas" aria-hidden="true"></canvas>
+    <div class="hero-overlay hero-mist" data-parallax="0.05" style="background-image:url('assets/img/mist.webp')" aria-hidden="true"></div>
+    <div class="hero-overlay hero-lightning" style="background-image:url('assets/img/lightning.webp')" aria-hidden="true"></div>
+    <div class="hero-scrim" aria-hidden="true"></div>
+
+    <div class="wrap hero-inner">
+      <div class="hero-content">
+        <p class="eyebrow">Positive-Reinforcement Commerce</p>
+        <h1 id="hero-title">Earn Your Reputation,<br /><span class="em">Never Buy It.</span></h1>
+        <p class="hero-sub">A commerce protocol that rewards good behavior. You earn reputation by being honest and helpful — nobody can purchase their way to trust.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#waitlist">Join the Waitlist <span class="btn-arrow" aria-hidden="true">→</span></a>
+          <a class="btn btn-ghost" href="#" rel="noopener">Read the White Paper</a>
+        </div>
+        <div class="hero-meta" aria-hidden="true">
+          <span>Basel, Switzerland</span>
+          <span>FINMA-aware</span>
+          <span>Points first, tokens later</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="scroll-cue" aria-hidden="true">
+      <span class="rail"></span>
+      Scroll
+    </div>
+  </section>
+
+  <!-- ===================== 2 · PROBLEM ===================== -->
+  <section class="section" id="problem" aria-labelledby="problem-title">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <p class="eyebrow">The Problem</p>
+        <h2 id="problem-title">E-Commerce Is Broken.</h2>
+        <p>Today's marketplaces are built on punishment — catching bad actors after the damage is done. The people who create real trust get nothing for it.</p>
+      </div>
+
+      <div class="grid-3">
+        <article class="card problem-card reveal" style="--d:0ms">
+          <span class="idx">01</span>
+          <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 3.5l2.3 4.9 5.4.7-4 3.7 1 5.3-4.7-2.6-4.7 2.6 1-5.3-4-3.7 5.4-.7z"/><path d="M4 4l16 16"/></svg></span>
+          <h3>Fake Reviews Everywhere</h3>
+          <p>You can buy 500 five-star reviews for a few hundred dollars. The buyer who spends 45 minutes writing an honest one gets nothing — maybe a badge, maybe not.</p>
+        </article>
+
+        <article class="card problem-card reveal" style="--d:90ms">
+          <span class="idx">02</span>
+          <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M19 3l2 2-4 4"/></svg></span>
+          <h3>Vendors Are Disposable</h3>
+          <p>Great service earns no lasting advantage. Reputation is locked to one platform, and an algorithm change can wipe out a vendor's visibility overnight.</p>
+        </article>
+
+        <article class="card problem-card reveal" style="--d:180ms">
+          <span class="idx">03</span>
+          <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-3.3 3.1-6 7-6s7 2.7 7 6"/><path d="M17 5a3 3 0 0 1 0 6"/><path d="M20 20c0-2.5-1.4-4.6-3.5-5.5"/></svg></span>
+          <h3>Communities Own Nothing</h3>
+          <p>Buyers and vendors build the trust that makes a marketplace valuable — then watch every bit of that value get extracted by the platform that hosts it.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 3 · SOLUTION ===================== -->
+  <section class="section solution" id="tokens" aria-labelledby="tokens-title">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <p class="eyebrow">The Solution</p>
+        <h2 id="tokens-title">Three Tokens. One Economy.</h2>
+        <p>Reputation, investment, and yield are deliberately separated — so price speculation can never corrupt the behavior that earns trust.</p>
+      </div>
+
+      <div class="token-grid">
+        <!-- KRUNE -->
+        <article class="token krune reveal" style="--d:0ms">
+          <span class="glow" aria-hidden="true"></span>
+          <img class="token-rune" src="assets/img/rune-krune.webp" alt="KarmaRune gold rune glyph" width="96" height="96" loading="lazy" decoding="async" />
+          <span class="earned-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            Earned, never bought
+          </span>
+          <span class="token-ticker">$KRUNE</span>
+          <h3>KarmaRune</h3>
+          <p class="role">Reputation</p>
+          <p>Proof you participated and contributed. KarmaRune is earned, never bought — it only enters the system through honest reviews, good service, and referrals.</p>
+          <dl class="how">
+            <dt>How you get it</dt>
+            <dd><b>Earned only.</b> Reviews, on-time shipping, helpfulness, referrals. It cannot be purchased at any price.</dd>
+          </dl>
+        </article>
+
+        <!-- KDEX -->
+        <article class="token kdex reveal" style="--d:110ms">
+          <span class="glow" aria-hidden="true"></span>
+          <img class="token-rune" src="assets/img/rune-kdex.webp" alt="KarmaDex teal rune glyph" width="96" height="96" loading="lazy" decoding="async" />
+          <span class="token-ticker">$KDEX</span>
+          <h3>KarmaDex</h3>
+          <p class="role">Investment &amp; Governance</p>
+          <p>The token you buy if you believe in the project. Fixed supply, governance votes, and deliberately walled off from the reputation layer.</p>
+          <dl class="how">
+            <dt>How you get it</dt>
+            <dd>Buy on exchanges — <b>Uniswap on Base</b>. Fixed supply. Gives you a vote on the rules.</dd>
+          </dl>
+        </article>
+
+        <!-- KSHRD -->
+        <article class="token kshrd reveal" style="--d:220ms">
+          <span class="glow" aria-hidden="true"></span>
+          <img class="token-rune" src="assets/img/rune-kshrd.webp" alt="KarmaShard violet rune glyph" width="96" height="96" loading="lazy" decoding="async" />
+          <span class="token-ticker">$KSHRD</span>
+          <h3>KarmaShard</h3>
+          <p class="role">Yield</p>
+          <p>What you get when earned reputation meets invested capital. The bridge between the two halves of the economy.</p>
+          <dl class="how">
+            <dt>How you get it</dt>
+            <dd>Stake <b>KRUNE + KDEX</b> together. Redeem for USDC or KDEX from the treasury, funded by real platform fees.</dd>
+          </dl>
+        </article>
+      </div>
+
+      <div class="anti-whale reveal">
+        <div class="kicker" aria-hidden="true">$10M ≠ Yield</div>
+        <p>A whale can buy all the <b>KDEX</b> they want. But without months of <span class="accent">earned KRUNE</span>, they can't stake, and they can't touch the yield. <b>You need both halves.</b> That single mechanic is what everything else is built on.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 4 · EARNING MECHANICS ===================== -->
+  <section class="section earn" id="earning" aria-labelledby="earning-title">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <p class="eyebrow">Earning Mechanics</p>
+        <h2 id="earning-title">Not All Actions Are Equal.</h2>
+        <p>KarmaRune is logarithmic, quality-weighted, and capped. The system pays for the exact behavior that helps a real person make a real decision.</p>
+      </div>
+
+      <div class="earn-grid">
+        <article class="earn-item reveal" style="--d:0ms">
+          <div class="num">01</div>
+          <h3>Logarithmic, not linear</h3>
+          <p>Bigger purchases earn more, but every extra dollar earns <b>less than the one before it</b>. You can't scale your way to the top by spending.</p>
+          <span class="tag">diminishing returns</span>
+        </article>
+
+        <article class="earn-item reveal" style="--d:90ms">
+          <div class="num">02</div>
+          <h3>Detail multiplies your reward</h3>
+          <p>A detailed review with photos on a $100 order earns <b>~30 KRUNE</b>. A generic one-liner earns <b>7</b>. Quality is scored openly — you can see why.</p>
+          <span class="tag">quality multiplier</span>
+        </article>
+
+        <article class="earn-item reveal" style="--d:0ms">
+          <div class="num">03</div>
+          <h3>Helpfulness pays retroactively</h3>
+          <p>When other buyers vote your review helpful, you earn more — weeks later. Fifty helpful votes can <b>double</b> your original KRUNE.</p>
+          <span class="tag">delayed bonus</span>
+        </article>
+
+        <article class="earn-item reveal" style="--d:90ms">
+          <div class="num">04</div>
+          <h3>First reviews earn 3×</h3>
+          <p>The first reviews on a product — where coverage is thin — earn a <b>3× bonus</b>. Go where the trust doesn't exist yet and get rewarded for building it.</p>
+          <span class="tag">coverage bonus</span>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 5 · HOW IT WORKS ===================== -->
+  <section class="section" id="how" aria-labelledby="how-title">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <p class="eyebrow">How It Works</p>
+        <h2 id="how-title">Four Steps to Earned Trust.</h2>
+        <p>From your first purchase to real yield — a loop that rewards the people who create trust, not just the platform that hosts it.</p>
+      </div>
+
+      <div class="steps">
+        <article class="step reveal" style="--d:0ms">
+          <span class="line" aria-hidden="true"></span><span class="dot" aria-hidden="true"></span>
+          <span class="n">STEP 01</span>
+          <h3>Browse &amp; Buy</h3>
+          <p>Shop quality vendors. Every honest action from here on is the start of a reputation you actually own.</p>
+        </article>
+        <article class="step reveal" style="--d:80ms">
+          <span class="line" aria-hidden="true"></span><span class="dot" aria-hidden="true"></span>
+          <span class="n">STEP 02</span>
+          <h3>Earn $KRUNE</h3>
+          <p>Honest reviews, on-time shipping, helpful answers, referrals. Reputation you build — never buy.</p>
+        </article>
+        <article class="step reveal" style="--d:160ms">
+          <span class="line" aria-hidden="true"></span><span class="dot" aria-hidden="true"></span>
+          <span class="n">STEP 03</span>
+          <h3>Stake KRUNE + KDEX</h3>
+          <p>Lock earned reputation beside invested capital. Both halves are required — that's the anti-whale gate.</p>
+        </article>
+        <article class="step reveal" style="--d:240ms">
+          <span class="line" aria-hidden="true"></span><span class="dot" aria-hidden="true"></span>
+          <span class="n">STEP 04</span>
+          <h3>Redeem or Recycle</h3>
+          <p>Your stake generates $KSHRD. Cash out to USDC, or recycle into KDEX for a lower fee and a bonus.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 6 · ROADMAP ===================== -->
+  <section class="section roadmap" id="roadmap" aria-labelledby="roadmap-title">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <p class="eyebrow">Roadmap</p>
+        <h2 id="roadmap-title">From Points to Protocol.</h2>
+        <p>Our roadmap is not a hype timeline. It is a proof schedule — we prove the economy works with points before a single token goes on-chain.</p>
+      </div>
+
+      <div class="phases">
+        <article class="phase p1 reveal" style="--d:0ms">
+          <div class="ph"><span class="lbl">Phase 1</span><span class="st">Building now</span></div>
+          <h3>MVP Marketplace</h3>
+          <p>Database points, no crypto. We prove the behavioral economics work with a real marketplace before tokenizing anything.</p>
+          <div class="bar" aria-hidden="true"><span></span></div>
+        </article>
+        <article class="phase p2 reveal" style="--d:110ms">
+          <div class="ph"><span class="lbl">Phase 2</span><span class="st">Next</span></div>
+          <h3>Tokenize &amp; Stake</h3>
+          <p>$KRUNE moves on-chain and $KDEX launches on Uniswap (Base). Staking opens — pair earned reputation with invested capital.</p>
+          <div class="bar" aria-hidden="true"><span></span></div>
+        </article>
+        <article class="phase p3 reveal" style="--d:220ms">
+          <div class="ph"><span class="lbl">Phase 3</span><span class="st">Endgame</span></div>
+          <h3>Open Protocol</h3>
+          <p>$KSHRD yield turns on at scale, governance moves to the DAO, and reputation becomes portable across any marketplace that adopts the protocol.</p>
+          <div class="bar" aria-hidden="true"><span></span></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 7 · TRUST & SECURITY ===================== -->
+  <section class="section trust" id="trust" aria-labelledby="trust-title">
+    <div class="wrap trust-inner">
+      <div class="reveal">
+        <p class="eyebrow">Trust &amp; Security</p>
+        <h2 id="trust-title">We chose the <span class="u">hard path</span> — because shortcuts create rug-pulls.</h2>
+      </div>
+      <ul class="trust-points reveal" style="--d:120ms">
+        <li>
+          <span class="tk" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
+          <div><strong>Built in Basel, Switzerland</strong><span>FINMA-aware and legally careful. We move deliberately — no rushing tokens to market.</span></div>
+        </li>
+        <li>
+          <span class="tk" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h10"/></svg></span>
+          <div><strong>Database-first</strong><span>Prove the model with real usage, then launch the tokens. Points first, tokens later.</span></div>
+        </li>
+        <li>
+          <span class="tk" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M5 8c3 0 5-2 7-2s4 2 7 2"/><circle cx="12" cy="20" r="1.6"/></svg></span>
+          <div><strong>Start centralized, earn the DAO</strong><span>We hold the keys until the community is ready. Governance moves to holders as the protocol matures.</span></div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===================== 8 · FOOTER ===================== -->
+<footer class="site" id="waitlist">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand reveal">
+        <a class="brand" href="#top" aria-label="TradeKarma home">
+          <span class="mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M9 7v18M9 16l9-9M9 16l9 9" stroke="#d4af37" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <b>TradeKarma</b>
+        </a>
+        <p>The e-commerce protocol where reputation is an asset you earn through good behavior — never one you buy.</p>
+        <p class="foot-tag">Earn Your Reputation, Never Buy It.</p>
+      </div>
+
+      <div class="waitlist reveal" style="--d:120ms">
+        <h3>Join the Waitlist</h3>
+        <p>Founding members earn the first KarmaRune and help shape the rules. No hype — just early access from Basel.</p>
+        <form id="waitlist-form" novalidate>
+          <div class="wl-row">
+            <label for="wl-email" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">Email address</label>
+            <input id="wl-email" type="email" name="email" inputmode="email" autocomplete="email" placeholder="you@email.com" required />
+            <button class="btn btn-primary" type="submit">Join Waitlist <span class="btn-arrow" aria-hidden="true">→</span></button>
+          </div>
+          <p class="wl-note" id="waitlist-note" role="status" hidden></p>
+        </form>
+      </div>
+    </div>
+
+    <div class="foot-bottom">
+      <nav class="foot-links" aria-label="Footer">
+        <a href="#" rel="noopener">White Paper</a>
+        <a href="#" rel="noopener">X / Twitter</a>
+        <a href="#" rel="noopener">Discord</a>
+      </nav>
+      <small>© 2026 TradeKarma · Basel, Switzerland</small>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- Header shadow on scroll ---------- */
+  (function(){
+    var header = document.getElementById('site-header');
+    if(!header) return;
+    var onScroll = function(){ header.classList.toggle('scrolled', window.scrollY > 12); };
+    window.addEventListener('scroll', onScroll, {passive:true});
+    onScroll();
+  })();
+
+  /* ---------- Scroll reveal (IntersectionObserver) ---------- */
+  (function(){
+    var els = document.querySelectorAll('.reveal');
+    if(reduce || !('IntersectionObserver' in window)){
+      for(var i=0;i<els.length;i++) els[i].classList.add('in');
+      return;
+    }
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, {threshold:0.14, rootMargin:'0px 0px -8% 0px'});
+    els.forEach(function(el){ io.observe(el); });
+  })();
+
+  /* ---------- Hero video (respects reduced motion) ---------- */
+  (function(){
+    var v = document.getElementById('hero-video');
+    if(v && !reduce){
+      var tryPlay = function(){ var p = v.play(); if(p && p.catch) p.catch(function(){}); };
+      if('IntersectionObserver' in window){
+        new IntersectionObserver(function(es){
+          es.forEach(function(e){ e.isIntersecting ? tryPlay() : v.pause(); });
+        }, {threshold:0.1}).observe(v);
+      } else { tryPlay(); }
+    }
+  })();
+
+  /* ---------- Subtle parallax ---------- */
+  (function(){
+    if(reduce) return;
+    var layers = document.querySelectorAll('[data-parallax]');
+    if(!layers.length) return;
+    var ticking = false;
+    var update = function(){
+      var y = window.scrollY;
+      for(var i=0;i<layers.length;i++){
+        var s = parseFloat(layers[i].getAttribute('data-parallax')) || 0.1;
+        layers[i].style.transform = 'translate3d(0,' + (y*s).toFixed(1) + 'px,0)';
+      }
+      ticking = false;
+    };
+    window.addEventListener('scroll', function(){
+      if(!ticking){ requestAnimationFrame(update); ticking = true; }
+    }, {passive:true});
+  })();
+
+  /* ---------- Canvas: drifting mist + faint lightning ---------- */
+  (function(){
+    var canvas = document.getElementById('mist-canvas');
+    if(!canvas) return;
+    var ctx = canvas.getContext('2d');
+    if(!ctx) return;
+    var W=0, H=0, dpr=1, raf=null, last=0, nextBolt=1600;
+    var blobs=[], bolts=[];
+    var hues=['212,175,55','20,184,166','139,92,246','226,232,240'];
+
+    function resize(){
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      var r = canvas.getBoundingClientRect();
+      W = r.width; H = r.height;
+      canvas.width = Math.max(1, Math.round(W*dpr));
+      canvas.height = Math.max(1, Math.round(H*dpr));
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+    }
+    function initBlobs(){
+      blobs.length = 0;
+      var count = Math.max(10, Math.min(26, Math.round((W*H)/46000)));
+      for(var i=0;i<count;i++){
+        blobs.push({
+          x: Math.random()*W,
+          y: Math.random()*H,
+          r: 130 + Math.random()*230,
+          vx: (Math.random()-0.5)*0.16,
+          vy: (Math.random()-0.5)*0.09,
+          a: 0.02 + Math.random()*0.05,
+          hue: hues[Math.floor(Math.random()*3)]
+        });
+      }
+    }
+    function drawMist(){
+      ctx.clearRect(0,0,W,H);
+      ctx.globalCompositeOperation = 'lighter';
+      for(var i=0;i<blobs.length;i++){
+        var b = blobs[i];
+        var g = ctx.createRadialGradient(b.x,b.y,0,b.x,b.y,b.r);
+        g.addColorStop(0, 'rgba('+b.hue+','+b.a+')');
+        g.addColorStop(1, 'rgba('+b.hue+',0)');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fill();
+      }
+      ctx.globalCompositeOperation = 'source-over';
+    }
+    function stepBlobs(){
+      for(var i=0;i<blobs.length;i++){
+        var b = blobs[i];
+        b.x += b.vx; b.y += b.vy;
+        if(b.x < -b.r) b.x = W+b.r; else if(b.x > W+b.r) b.x = -b.r;
+        if(b.y < -b.r) b.y = H+b.r; else if(b.y > H+b.r) b.y = -b.r;
+      }
+    }
+    function spawnBolt(){
+      var x = W*(0.34 + Math.random()*0.56);
+      var steps = 8 + Math.floor(Math.random()*6);
+      var segs = [], cx = x;
+      for(var i=0;i<=steps;i++){
+        segs.push({x:cx, y:(H*0.9)*(i/steps)});
+        cx += (Math.random()-0.5)*48;
+      }
+      bolts.push({segs:segs, life:0, ttl:520, hue: Math.random()<0.6 ? '226,232,240' : '20,184,166'});
+    }
+    function drawBolts(dt){
+      for(var i=bolts.length-1;i>=0;i--){
+        var bo = bolts[i]; bo.life += dt;
+        var t = bo.life/bo.ttl;
+        if(t >= 1){ bolts.splice(i,1); continue; }
+        var alpha = Math.sin(t*Math.PI) * 0.45;
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.strokeStyle = 'rgba('+bo.hue+','+alpha+')';
+        ctx.lineWidth = 1.3;
+        ctx.shadowColor = 'rgba('+bo.hue+','+alpha+')';
+        ctx.shadowBlur = 16;
+        ctx.beginPath();
+        for(var s=0;s<bo.segs.length;s++){
+          var p = bo.segs[s];
+          if(s===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+    function frame(ts){
+      var dt = last ? Math.min(50, ts-last) : 16;
+      last = ts;
+      stepBlobs(); drawMist();
+      nextBolt -= dt;
+      if(nextBolt <= 0){ spawnBolt(); nextBolt = 2800 + Math.random()*4600; }
+      drawBolts(dt);
+      raf = requestAnimationFrame(frame);
+    }
+    function start(){ if(!raf){ last = 0; raf = requestAnimationFrame(frame); } }
+    function stop(){ if(raf){ cancelAnimationFrame(raf); raf = null; } }
+
+    resize(); initBlobs();
+
+    if(reduce){
+      drawMist();               // single static atmospheric frame, no animation
+    } else {
+      start();
+      var hero = document.getElementById('hero');
+      if(hero && 'IntersectionObserver' in window){
+        new IntersectionObserver(function(es){
+          es.forEach(function(e){ e.isIntersecting ? start() : stop(); });
+        }, {threshold:0}).observe(hero);
+      }
+    }
+
+    var rt;
+    window.addEventListener('resize', function(){
+      clearTimeout(rt);
+      rt = setTimeout(function(){ resize(); initBlobs(); if(reduce) drawMist(); }, 160);
+    }, {passive:true});
+  })();
+
+  /* ---------- Waitlist form ---------- */
+  (function(){
+    var form = document.getElementById('waitlist-form');
+    if(!form) return;
+    var note = document.getElementById('waitlist-note');
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      var email = form.querySelector('input[type=email]');
+      var val = email && email.value.trim();
+      if(val && /.+@.+\..+/.test(val)){
+        note.textContent = "You're on the list. We'll be in touch from Basel.";
+        note.hidden = false;
+        form.reset();
+      } else {
+        note.textContent = "Please enter a valid email address.";
+        note.hidden = false;
+        if(email) email.focus();
+      }
+    });
+  })();
+})();
+</script>
+</body>
+</html>
