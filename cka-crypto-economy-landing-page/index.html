@@ -1,0 +1,2674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TradeKarma — Earn Your Reputation, Never Buy It</title>
+  <meta name="description" content="TradeKarma is a positive-reinforcement token economy for e-commerce. Earn crypto tokens for honest reviews, quality products, and community participation. Your reputation is an asset you earn.">
+  <meta name="keywords" content="token economy, e-commerce, crypto rewards, reputation system, marketplace, KDEX, KRUNE, KSHRD, Basel, Switzerland">
+  <meta property="og:title" content="TradeKarma — Earn Your Reputation, Never Buy It">
+  <meta property="og:description" content="A positive-reinforcement token economy where good behavior is rewarded with real crypto tokens.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tradekarma.net">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+  <style>
+    /* ============================================
+       CUSTOM PROPERTIES
+       ============================================ */
+    :root {
+      --black: #0a0a0a;
+      --black-light: #111111;
+      --black-card: #141414;
+      --black-elevated: #1a1a1a;
+      --gray-900: #1e1e1e;
+      --gray-800: #2a2a2a;
+      --gray-700: #3a3a3a;
+      --gray-600: #4a4a4a;
+      --gray-500: #6b6b6b;
+      --gray-400: #8a8a8a;
+      --gray-300: #a0a0a0;
+      --gray-200: #c0c0c0;
+      --gray-100: #e0e0e0;
+      --white: #f5f5f5;
+      --white-pure: #ffffff;
+      --gold: #d4af37;
+      --gold-dim: rgba(212, 175, 55, 0.15);
+      --gold-glow: rgba(212, 175, 55, 0.5);
+      --gold-subtle: rgba(212, 175, 55, 0.08);
+      --gold-border: rgba(212, 175, 55, 0.25);
+      --teal: #14b8a6;
+      --teal-dim: rgba(20, 184, 166, 0.15);
+      --teal-glow: rgba(20, 184, 166, 0.4);
+      --teal-subtle: rgba(20, 184, 166, 0.08);
+      --teal-border: rgba(20, 184, 166, 0.25);
+      --font-display: 'Syne', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+      --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+      --radius: 12px;
+      --radius-lg: 20px;
+      --radius-xl: 28px;
+    }
+
+    /* ============================================
+       RESET & BASE
+       ============================================ */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      font-size: 16px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--gray-700) var(--black);
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--black); }
+    ::-webkit-scrollbar-thumb { background: var(--gray-700); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--gray-600); }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--black);
+      color: var(--white);
+      line-height: 1.7;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    ::selection {
+      background: var(--gold);
+      color: var(--black);
+    }
+
+    img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    /* ============================================
+       NOISE OVERLAY
+       ============================================ */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      pointer-events: none;
+      opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      background-size: 256px 256px;
+    }
+
+    /* ============================================
+       LAYOUT
+       ============================================ */
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 0 32px;
+    }
+
+    .container--narrow {
+      max-width: 860px;
+    }
+
+    .section {
+      padding: 140px 0;
+      position: relative;
+    }
+
+    /* ============================================
+       TYPOGRAPHY
+       ============================================ */
+    .eyebrow {
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .eyebrow::before {
+      content: '';
+      width: 24px;
+      height: 1px;
+      background: var(--gold);
+    }
+
+    .eyebrow--teal {
+      color: var(--teal);
+    }
+
+    .eyebrow--teal::before {
+      background: var(--teal);
+    }
+
+    .heading-xl {
+      font-family: var(--font-display);
+      font-size: clamp(3rem, 7vw, 5.5rem);
+      font-weight: 800;
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+      color: var(--white-pure);
+    }
+
+    .heading-lg {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 4.5vw, 3.5rem);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      color: var(--white-pure);
+    }
+
+    .heading-md {
+      font-family: var(--font-display);
+      font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+    }
+
+    .heading-sm {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 600;
+      line-height: 1.3;
+      letter-spacing: -0.01em;
+    }
+
+    .text-lg {
+      font-size: 1.175rem;
+      color: var(--gray-400);
+      line-height: 1.75;
+    }
+
+    .text-body {
+      font-size: 0.95rem;
+      color: var(--gray-400);
+      line-height: 1.7;
+    }
+
+    .text-gold {
+      color: var(--gold);
+    }
+
+    .text-teal {
+      color: var(--teal);
+    }
+
+    .text-gradient-gold {
+      background: linear-gradient(135deg, var(--white-pure) 0%, var(--gold) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .text-gradient-teal {
+      background: linear-gradient(135deg, var(--teal) 0%, var(--white-pure) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ============================================
+       BUTTONS
+       ============================================ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 14px 32px;
+      border-radius: 100px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.4s var(--ease-out-expo);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn--primary {
+      background: var(--gold);
+      color: var(--black);
+    }
+
+    .btn--primary:hover {
+      box-shadow: 0 0 40px var(--gold-glow), 0 8px 32px rgba(0, 0, 0, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .btn--primary::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    .btn--primary:hover::after {
+      opacity: 1;
+    }
+
+    .btn--teal {
+      background: var(--teal);
+      color: var(--black);
+    }
+
+    .btn--teal:hover {
+      box-shadow: 0 0 40px var(--teal-glow), 0 8px 32px rgba(0, 0, 0, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .btn--ghost {
+      background: transparent;
+      color: var(--white);
+      border: 1px solid var(--gray-700);
+    }
+
+    .btn--ghost:hover {
+      border-color: var(--gold-border);
+      color: var(--gold);
+      box-shadow: 0 0 20px var(--gold-subtle);
+    }
+
+    .btn-icon {
+      display: inline-flex;
+      width: 18px;
+      height: 18px;
+    }
+
+    .btn-icon svg {
+      width: 100%;
+      height: 100%;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* ============================================
+       NAVIGATION
+       ============================================ */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      padding: 20px 0;
+      transition: all 0.5s var(--ease-out-expo);
+    }
+
+    .nav.scrolled {
+      padding: 12px 0;
+      background: rgba(10, 10, 10, 0.85);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .nav__inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav__logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1.3rem;
+      letter-spacing: -0.02em;
+      color: var(--white-pure);
+      transition: opacity 0.3s ease;
+    }
+
+    .nav__logo:hover {
+      opacity: 0.8;
+    }
+
+    .nav__logo-mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .nav__logo-mark::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.25), transparent);
+    }
+
+    .nav__logo-mark svg {
+      width: 20px;
+      height: 20px;
+      fill: var(--black);
+      position: relative;
+      z-index: 1;
+    }
+
+    .nav__links {
+      display: flex;
+      align-items: center;
+      gap: 36px;
+      list-style: none;
+    }
+
+    .nav__links a {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--gray-400);
+      transition: color 0.3s ease;
+      position: relative;
+    }
+
+    .nav__links a:hover {
+      color: var(--white-pure);
+    }
+
+    .nav__links a::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 0;
+      height: 1px;
+      background: var(--gold);
+      transition: width 0.4s var(--ease-out-expo);
+    }
+
+    .nav__links a:hover::after {
+      width: 100%;
+    }
+
+    .nav__cta {
+      padding: 10px 24px;
+      background: var(--gold);
+      color: var(--black) !important;
+      font-weight: 600 !important;
+      border-radius: 100px;
+      font-size: 0.85rem;
+      transition: all 0.3s ease;
+    }
+
+    .nav__cta:hover {
+      box-shadow: 0 0 24px var(--gold-glow);
+      transform: translateY(-1px);
+    }
+
+    .nav__cta::after {
+      display: none !important;
+    }
+
+    .nav__mobile {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--white);
+      cursor: pointer;
+      padding: 4px;
+      width: 32px;
+      height: 32px;
+    }
+
+    .nav__mobile svg {
+      width: 100%;
+      height: 100%;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+    }
+
+    .mobile-menu {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 999;
+      background: rgba(10, 10, 10, 0.97);
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+    }
+
+    .mobile-menu.active {
+      display: flex;
+    }
+
+    .mobile-menu a {
+      font-family: var(--font-display);
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: var(--gray-300);
+      transition: color 0.3s ease;
+    }
+
+    .mobile-menu a:hover {
+      color: var(--gold);
+    }
+
+    .mobile-menu__close {
+      position: absolute;
+      top: 24px;
+      right: 32px;
+      background: none;
+      border: none;
+      color: var(--white);
+      cursor: pointer;
+      width: 32px;
+      height: 32px;
+    }
+
+    .mobile-menu__close svg {
+      width: 100%;
+      height: 100%;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+    }
+
+    /* ============================================
+       HERO
+       ============================================ */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      padding: 160px 0 120px;
+    }
+
+    .hero__grid-bg {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(212, 175, 55, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(212, 175, 55, 0.03) 1px, transparent 1px);
+      background-size: 80px 80px;
+      mask-image: radial-gradient(ellipse 60% 50% at 50% 40%, black, transparent);
+      -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 40%, black, transparent);
+    }
+
+    .hero__glow {
+      position: absolute;
+      top: -20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 600px;
+      background: radial-gradient(ellipse, var(--gold-subtle) 0%, transparent 70%);
+      pointer-events: none;
+      animation: heroGlowPulse 8s ease-in-out infinite;
+    }
+
+    .hero__glow-teal {
+      position: absolute;
+      bottom: -10%;
+      right: -10%;
+      width: 600px;
+      height: 400px;
+      background: radial-gradient(ellipse, var(--teal-subtle) 0%, transparent 70%);
+      pointer-events: none;
+      animation: heroGlowPulse 10s ease-in-out infinite reverse;
+    }
+
+    @keyframes heroGlowPulse {
+      0%, 100% { opacity: 0.6; transform: translateX(-50%) scale(1); }
+      50% { opacity: 1; transform: translateX(-50%) scale(1.1); }
+    }
+
+    .hero__content {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+
+    .hero__text {
+      max-width: 600px;
+    }
+
+    .hero__title {
+      margin-bottom: 24px;
+    }
+
+    .hero__subtitle {
+      font-size: 1.2rem;
+      color: var(--gray-300);
+      line-height: 1.7;
+      margin-bottom: 40px;
+      max-width: 520px;
+    }
+
+    .hero__actions {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .hero__image {
+      position: relative;
+    }
+
+    .hero__image img {
+      width: 140%;
+      max-width: none;
+      margin-left: -20%;
+      filter: drop-shadow(0 0 80px var(--gold-glow));
+    }
+
+    /* ============================================
+       SECTION DIVIDERS
+       ============================================ */
+    .section-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gray-800), transparent);
+      margin: 0 auto;
+      max-width: 800px;
+    }
+
+    /* ============================================
+       PROBLEM SECTION
+       ============================================ */
+    .problem {
+      text-align: center;
+    }
+
+    .problem__grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 60px;
+    }
+
+    .problem__card {
+      background: var(--black-card);
+      border: 1px solid var(--gray-800);
+      border-radius: var(--radius-lg);
+      padding: 40px 32px;
+      text-align: left;
+      transition: all 0.4s var(--ease-out-expo);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .problem__card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #ef4444, transparent);
+      opacity: 0.5;
+    }
+
+    .problem__card:hover {
+      border-color: var(--gray-700);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .problem__card-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: rgba(239, 68, 68, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .problem__card-icon svg {
+      width: 24px;
+      height: 24px;
+      stroke: #ef4444;
+      fill: none;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .problem__card h3 {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--white-pure);
+      margin-bottom: 12px;
+    }
+
+    .problem__card p {
+      font-size: 0.9rem;
+      color: var(--gray-400);
+      line-height: 1.7;
+    }
+
+    /* ============================================
+       TOKENS SECTION
+       ============================================ */
+    .tokens {
+      position: relative;
+    }
+
+    .tokens__header {
+      text-align: center;
+      margin-bottom: 80px;
+    }
+
+    .tokens__visual {
+      margin-bottom: 80px;
+      text-align: center;
+    }
+
+    .tokens__visual img {
+      max-width: 720px;
+      margin: 0 auto;
+      filter: drop-shadow(0 0 60px var(--gold-glow));
+    }
+
+    .tokens__grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .token-card {
+      background: var(--black-card);
+      border: 1px solid var(--gray-800);
+      border-radius: var(--radius-lg);
+      padding: 40px 32px;
+      transition: all 0.4s var(--ease-out-expo);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .token-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+    }
+
+    .token-card--kdex {
+      border-color: var(--gold-border);
+    }
+
+    .token-card--kdex:hover {
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4), 0 0 60px var(--gold-subtle);
+    }
+
+    .token-card--kdex::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+
+    .token-card--krune {
+      border-color: var(--teal-border);
+    }
+
+    .token-card--krune:hover {
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4), 0 0 60px var(--teal-subtle);
+    }
+
+    .token-card--krune::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--teal), transparent);
+    }
+
+    .token-card--kshd::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gray-300), transparent);
+    }
+
+    .token-card--kshd:hover {
+      border-color: rgba(200, 200, 200, 0.2);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4), 0 0 60px rgba(200, 200, 200, 0.05);
+    }
+
+    .token-card__symbol {
+      font-family: var(--font-display);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 6px 14px;
+      border-radius: 100px;
+      display: inline-block;
+      margin-bottom: 20px;
+    }
+
+    .token-card--kdex .token-card__symbol {
+      background: var(--gold-dim);
+      color: var(--gold);
+    }
+
+    .token-card--krune .token-card__symbol {
+      background: var(--teal-dim);
+      color: var(--teal);
+    }
+
+    .token-card--kshd .token-card__symbol {
+      background: rgba(200, 200, 200, 0.1);
+      color: var(--gray-200);
+    }
+
+    .token-card__name {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--white-pure);
+      margin-bottom: 8px;
+    }
+
+    .token-card__role {
+      font-size: 0.85rem;
+      color: var(--gray-400);
+      margin-bottom: 20px;
+      font-weight: 500;
+    }
+
+    .token-card__desc {
+      font-size: 0.9rem;
+      color: var(--gray-400);
+      line-height: 1.7;
+      margin-bottom: 24px;
+    }
+
+    .token-card__badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 6px 12px;
+      border-radius: 6px;
+    }
+
+    .token-card--krune .token-card__badge {
+      background: rgba(20, 184, 166, 0.08);
+      color: var(--teal);
+      border: 1px solid var(--teal-border);
+    }
+
+    .token-card__badge svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* Earn list inside KRUNE card */
+    .earn-list {
+      list-style: none;
+      margin-bottom: 24px;
+    }
+
+    .earn-list li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 0.85rem;
+    }
+
+    .earn-list li:last-child {
+      border-bottom: none;
+    }
+
+    .earn-list__action {
+      color: var(--gray-300);
+    }
+
+    .earn-list__reward {
+      color: var(--teal);
+      font-weight: 600;
+      font-family: var(--font-display);
+    }
+
+    /* ============================================
+       EARNING MECHANICS
+       ============================================ */
+    .earning {
+      background: var(--black-light);
+    }
+
+    .earning__header {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .earning__grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .earning__card {
+      background: var(--black-card);
+      border: 1px solid var(--gray-800);
+      border-radius: var(--radius-lg);
+      padding: 36px 32px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.4s var(--ease-out-expo);
+    }
+
+    .earning__card:hover {
+      border-color: var(--gray-700);
+      transform: translateY(-3px);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
+    }
+
+    .earning__card-label {
+      font-family: var(--font-body);
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-bottom: 12px;
+    }
+
+    .earning__card h3 {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--white-pure);
+      margin-bottom: 8px;
+    }
+
+    .earning__card p {
+      font-size: 0.88rem;
+      color: var(--gray-400);
+      line-height: 1.65;
+    }
+
+    .earning__card--log::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--teal), transparent);
+    }
+
+    .earning__card--quality::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+
+    .earning__card--helpfulness::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--teal), transparent);
+    }
+
+    .earning__card--first::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+
+    .earning__scale {
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      margin-top: 16px;
+      height: 48px;
+    }
+
+    .earning__bar {
+      flex: 1;
+      border-radius: 3px 3px 0 0;
+      min-height: 8px;
+      transition: height 0.6s var(--ease-out-expo);
+    }
+
+    .earning__bar:nth-child(1) { height: 20%; background: var(--teal-dim); border: 1px solid var(--teal-border); }
+    .earning__bar:nth-child(2) { height: 35%; background: var(--teal-dim); border: 1px solid var(--teal-border); }
+    .earning__bar:nth-child(3) { height: 50%; background: var(--teal-dim); border: 1px solid var(--teal-border); }
+    .earning__bar:nth-child(4) { height: 65%; background: var(--teal-dim); border: 1px solid var(--teal-border); }
+    .earning__bar:nth-child(5) { height: 75%; background: var(--teal); }
+    .earning__bar:nth-child(6) { height: 82%; background: var(--teal); }
+    .earning__bar:nth-child(7) { height: 88%; background: var(--teal); }
+    .earning__bar:nth-child(8) { height: 92%; background: var(--teal); }
+
+    .earning__multiplier {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .earning__mult-item {
+      flex: 1;
+      text-align: center;
+      padding: 8px 4px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      font-family: var(--font-display);
+    }
+
+    .earning__mult-item--low {
+      background: rgba(239, 68, 68, 0.08);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .earning__mult-item--mid {
+      background: var(--gold-dim);
+      color: var(--gold);
+      border: 1px solid var(--gold-border);
+    }
+
+    .earning__mult-item--high {
+      background: var(--teal-dim);
+      color: var(--teal);
+      border: 1px solid var(--teal-border);
+    }
+
+    @media (max-width: 768px) {
+      .earning__grid {
+        grid-template-columns: 1fr;
+        max-width: 500px;
+        margin: 0 auto;
+      }
+    }
+
+    /* ============================================
+       HOW IT WORKS
+       ============================================ */
+    .how-it-works {
+      background: var(--black-light);
+    }
+
+    .how-it-works__header {
+      text-align: center;
+      margin-bottom: 80px;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      position: relative;
+    }
+
+    .steps::before {
+      content: '';
+      position: absolute;
+      top: 44px;
+      left: 10%;
+      right: 10%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--gold), var(--teal), var(--gold), var(--gray-300));
+      opacity: 0.3;
+    }
+
+    .step {
+      text-align: center;
+      padding: 0 20px;
+      position: relative;
+    }
+
+    .step__number {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 800;
+      position: relative;
+      z-index: 2;
+    }
+
+    .step:nth-child(1) .step__number {
+      background: var(--gold-dim);
+      color: var(--gold);
+      border: 2px solid var(--gold-border);
+    }
+
+    .step:nth-child(2) .step__number {
+      background: var(--teal-dim);
+      color: var(--teal);
+      border: 2px solid var(--teal-border);
+    }
+
+    .step:nth-child(3) .step__number {
+      background: var(--gold-dim);
+      color: var(--gold);
+      border: 2px solid var(--gold-border);
+    }
+
+    .step:nth-child(4) .step__number {
+      background: rgba(200, 200, 200, 0.1);
+      color: var(--gray-200);
+      border: 2px solid rgba(200, 200, 200, 0.2);
+    }
+
+    .step__icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .step__icon svg {
+      width: 32px;
+      height: 32px;
+      stroke: var(--gray-300);
+      fill: none;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .step h3 {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--white-pure);
+      margin-bottom: 10px;
+    }
+
+    .step p {
+      font-size: 0.85rem;
+      color: var(--gray-400);
+      line-height: 1.65;
+    }
+
+    /* ============================================
+       VENDORS SECTION
+       ============================================ */
+    .vendors__content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+
+    .vendors__text {
+      max-width: 520px;
+    }
+
+    .vendors__text .heading-lg {
+      margin-bottom: 20px;
+    }
+
+    .vendors__text .text-lg {
+      margin-bottom: 40px;
+    }
+
+    .vendors__features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .vendors__feature {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .vendors__feature-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--teal-dim);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .vendors__feature-icon svg {
+      width: 20px;
+      height: 20px;
+      stroke: var(--teal);
+      fill: none;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .vendors__feature h4 {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--white-pure);
+      margin-bottom: 4px;
+    }
+
+    .vendors__feature p {
+      font-size: 0.85rem;
+      color: var(--gray-400);
+      line-height: 1.6;
+    }
+
+    .vendors__image {
+      position: relative;
+    }
+
+    .vendors__image img {
+      width: 130%;
+      max-width: none;
+      filter: drop-shadow(0 0 60px var(--teal-glow));
+    }
+
+    /* ============================================
+       ROADMAP
+       ============================================ */
+    .roadmap {
+      background: var(--black-light);
+    }
+
+    .roadmap__header {
+      text-align: center;
+      margin-bottom: 80px;
+    }
+
+    .roadmap__timeline {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      position: relative;
+    }
+
+    .roadmap__phase {
+      background: var(--black-card);
+      border: 1px solid var(--gray-800);
+      border-radius: var(--radius-lg);
+      padding: 40px 32px;
+      transition: all 0.4s var(--ease-out-expo);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .roadmap__phase:hover {
+      transform: translateY(-4px);
+      border-color: var(--gray-700);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .roadmap__phase::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+    }
+
+    .roadmap__phase:nth-child(1)::before {
+      background: linear-gradient(90deg, var(--gold), var(--gold-border));
+    }
+
+    .roadmap__phase:nth-child(2)::before {
+      background: linear-gradient(90deg, var(--teal), var(--teal-border));
+    }
+
+    .roadmap__phase:nth-child(3)::before {
+      background: linear-gradient(90deg, var(--gold), var(--teal));
+    }
+
+    .roadmap__phase-label {
+      font-family: var(--font-body);
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 16px;
+    }
+
+    .roadmap__phase:nth-child(1) .roadmap__phase-label {
+      background: var(--gold-dim);
+      color: var(--gold);
+    }
+
+    .roadmap__phase:nth-child(2) .roadmap__phase-label {
+      background: var(--teal-dim);
+      color: var(--teal);
+    }
+
+    .roadmap__phase:nth-child(3) .roadmap__phase-label {
+      background: linear-gradient(135deg, var(--gold-dim), var(--teal-dim));
+      color: var(--white);
+    }
+
+    .roadmap__phase h3 {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--white-pure);
+      margin-bottom: 8px;
+    }
+
+    .roadmap__phase-time {
+      font-size: 0.8rem;
+      color: var(--gray-500);
+      margin-bottom: 16px;
+      font-weight: 500;
+    }
+
+    .roadmap__phase-desc {
+      font-size: 0.9rem;
+      color: var(--gray-400);
+      line-height: 1.7;
+      margin-bottom: 20px;
+    }
+
+    .roadmap__milestones {
+      list-style: none;
+    }
+
+    .roadmap__milestones li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.85rem;
+      color: var(--gray-300);
+      padding: 6px 0;
+    }
+
+    .roadmap__milestones li svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+
+    .roadmap__phase:nth-child(1) .roadmap__milestones li svg {
+      stroke: var(--gold);
+    }
+
+    .roadmap__phase:nth-child(2) .roadmap__milestones li svg {
+      stroke: var(--teal);
+    }
+
+    .roadmap__phase:nth-child(3) .roadmap__milestones li svg {
+      stroke: var(--gold);
+    }
+
+    /* ============================================
+       TRUST SECTION
+       ============================================ */
+    .trust__content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+
+    .trust__image {
+      position: relative;
+    }
+
+    .trust__image img {
+      width: 130%;
+      max-width: none;
+      margin-left: -15%;
+      filter: drop-shadow(0 0 60px var(--gold-glow));
+    }
+
+    .trust__text .heading-lg {
+      margin-bottom: 20px;
+    }
+
+    .trust__text .text-lg {
+      margin-bottom: 40px;
+    }
+
+    .trust__badges {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .trust__badge {
+      background: var(--black-card);
+      border: 1px solid var(--gray-800);
+      border-radius: var(--radius);
+      padding: 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .trust__badge:hover {
+      border-color: var(--gold-border);
+      transform: translateY(-2px);
+    }
+
+    .trust__badge-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: var(--gold-dim);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .trust__badge-icon svg {
+      width: 18px;
+      height: 18px;
+      stroke: var(--gold);
+      fill: none;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .trust__badge h4 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--white-pure);
+      margin-bottom: 4px;
+    }
+
+    .trust__badge p {
+      font-size: 0.75rem;
+      color: var(--gray-500);
+      line-height: 1.5;
+    }
+
+    /* ============================================
+       STATS
+       ============================================ */
+    .stats {
+      background: var(--black-light);
+      border-top: 1px solid var(--gray-800);
+      border-bottom: 1px solid var(--gray-800);
+      padding: 80px 0;
+    }
+
+    .stats__grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 32px;
+    }
+
+    .stat {
+      text-align: center;
+      position: relative;
+    }
+
+    .stat::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 10%;
+      height: 80%;
+      width: 1px;
+      background: var(--gray-800);
+    }
+
+    .stat:last-child::after {
+      display: none;
+    }
+
+    .stat__number {
+      font-family: var(--font-display);
+      font-size: clamp(2.5rem, 4vw, 3.5rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+
+    .stat:nth-child(1) .stat__number { color: var(--gold); }
+    .stat:nth-child(2) .stat__number { color: var(--teal); }
+    .stat:nth-child(3) .stat__number { color: var(--gold); }
+    .stat:nth-child(4) .stat__number { color: var(--teal); }
+
+    .stat__label {
+      font-size: 0.85rem;
+      color: var(--gray-400);
+      font-weight: 500;
+    }
+
+    /* ============================================
+       FINAL CTA
+       ============================================ */
+    .cta-section {
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-section__glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 800px;
+      height: 500px;
+      background: radial-gradient(ellipse, var(--gold-subtle) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .cta-section__content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .cta-section .heading-lg {
+      margin-bottom: 20px;
+    }
+
+    .cta-section .text-lg {
+      margin-bottom: 48px;
+      max-width: 560px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .cta-form {
+      display: flex;
+      gap: 12px;
+      max-width: 480px;
+      margin: 0 auto 24px;
+    }
+
+    .cta-form input {
+      flex: 1;
+      padding: 14px 24px;
+      border-radius: 100px;
+      border: 1px solid var(--gray-700);
+      background: var(--black-card);
+      color: var(--white);
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.3s ease;
+    }
+
+    .cta-form input::placeholder {
+      color: var(--gray-500);
+    }
+
+    .cta-form input:focus {
+      border-color: var(--gold-border);
+      box-shadow: 0 0 20px var(--gold-subtle);
+    }
+
+    .cta-form button {
+      white-space: nowrap;
+    }
+
+    .cta-note {
+      font-size: 0.8rem;
+      color: var(--gray-500);
+    }
+
+    /* ============================================
+       FOOTER
+       ============================================ */
+    .footer {
+      border-top: 1px solid var(--gray-800);
+      padding: 60px 0 40px;
+    }
+
+    .footer__inner {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr 1fr;
+      gap: 48px;
+      margin-bottom: 48px;
+    }
+
+    .footer__brand {
+      max-width: 280px;
+    }
+
+    .footer__logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: var(--white-pure);
+      margin-bottom: 16px;
+    }
+
+    .footer__logo-mark {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .footer__logo-mark svg {
+      width: 18px;
+      height: 18px;
+      fill: var(--black);
+    }
+
+    .footer__desc {
+      font-size: 0.85rem;
+      color: var(--gray-500);
+      line-height: 1.7;
+      margin-bottom: 20px;
+    }
+
+    .footer__social {
+      display: flex;
+      gap: 12px;
+    }
+
+    .footer__social a {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 1px solid var(--gray-800);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+
+    .footer__social a:hover {
+      border-color: var(--gold-border);
+      background: var(--gold-dim);
+    }
+
+    .footer__social a svg {
+      width: 16px;
+      height: 16px;
+      fill: var(--gray-400);
+      transition: fill 0.3s ease;
+    }
+
+    .footer__social a:hover svg {
+      fill: var(--gold);
+    }
+
+    .footer__col h4 {
+      font-family: var(--font-display);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--white-pure);
+      margin-bottom: 16px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .footer__col ul {
+      list-style: none;
+    }
+
+    .footer__col li {
+      margin-bottom: 10px;
+    }
+
+    .footer__col a {
+      font-size: 0.85rem;
+      color: var(--gray-500);
+      transition: color 0.3s ease;
+    }
+
+    .footer__col a:hover {
+      color: var(--gold);
+    }
+
+    .footer__bottom {
+      border-top: 1px solid var(--gray-800);
+      padding-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer__bottom p {
+      font-size: 0.8rem;
+      color: var(--gray-600);
+    }
+
+    .footer__tagline {
+      font-size: 0.8rem;
+      color: var(--gray-500);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .footer__tagline svg {
+      width: 14px;
+      height: 14px;
+      fill: #ef4444;
+    }
+
+    /* ============================================
+       SCROLL ANIMATIONS
+       ============================================ */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.8s var(--ease-out-expo), transform 0.8s var(--ease-out-expo);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+    .reveal-delay-5 { transition-delay: 0.5s; }
+
+    /* ============================================
+       COUNTER ANIMATION
+       ============================================ */
+    .counter {
+      display: inline-block;
+    }
+
+    /* ============================================
+       RESPONSIVE
+       ============================================ */
+    @media (max-width: 1024px) {
+      .hero__content {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+
+      .hero__text {
+        max-width: 100%;
+      }
+
+      .hero__subtitle {
+        max-width: 100%;
+      }
+
+      .hero__actions {
+        justify-content: center;
+      }
+
+      .hero__image {
+        max-width: 500px;
+        margin: 0 auto;
+      }
+
+      .problem__grid {
+        grid-template-columns: 1fr;
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .tokens__grid {
+        grid-template-columns: 1fr;
+        max-width: 500px;
+        margin: 0 auto;
+      }
+
+      .steps {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 40px;
+      }
+
+      .steps::before {
+        display: none;
+      }
+
+      .vendors__content {
+        grid-template-columns: 1fr;
+        gap: 48px;
+      }
+
+      .vendors__image {
+        max-width: 500px;
+        margin: 0 auto;
+        order: -1;
+      }
+
+      .roadmap__timeline {
+        grid-template-columns: 1fr;
+        max-width: 500px;
+        margin: 0 auto;
+      }
+
+      .trust__content {
+        grid-template-columns: 1fr;
+        gap: 48px;
+      }
+
+      .trust__image {
+        max-width: 500px;
+        margin: 0 auto;
+      }
+
+      .stats__grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .stat:nth-child(2)::after {
+        display: none;
+      }
+
+      .footer__inner {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .section {
+        padding: 100px 0;
+      }
+
+      .container {
+        padding: 0 20px;
+      }
+
+      .nav__links {
+        display: none;
+      }
+
+      .nav__mobile {
+        display: block;
+      }
+
+      .steps {
+        grid-template-columns: 1fr;
+        max-width: 360px;
+        margin: 0 auto;
+      }
+
+      .stats__grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+      }
+
+      .stat::after {
+        display: none;
+      }
+
+      .trust__badges {
+        grid-template-columns: 1fr;
+      }
+
+      .cta-form {
+        flex-direction: column;
+      }
+
+      .footer__inner {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+
+      .footer__bottom {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+      }
+
+      .hero__actions {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .hero__actions .btn {
+        width: 100%;
+        max-width: 280px;
+        justify-content: center;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .heading-xl {
+        font-size: 2.5rem;
+      }
+
+      .heading-lg {
+        font-size: 1.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================
+       NAVIGATION
+       ============================================ -->
+  <nav class="nav" id="nav">
+    <div class="container">
+      <div class="nav__inner">
+        <a href="#" class="nav__logo">
+          <div class="nav__logo-mark">
+            <!-- Karma symbol -->
+            <svg viewBox="0 0 24 24"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/></svg>
+          </div>
+          TradeKarma
+        </a>
+
+        <ul class="nav__links">
+          <li><a href="#tokens">Tokens</a></li>
+          <li><a href="#earning">Earning</a></li>
+          <li><a href="#how-it-works">How It Works</a></li>
+          <li><a href="#roadmap">Roadmap</a></li>
+          <li><a href="#trust">Trust</a></li>
+          <li><a href="#waitlist" class="nav__cta">Join Waitlist</a></li>
+        </ul>
+
+        <button class="nav__mobile" onclick="document.getElementById('mobileMenu').classList.add('active')" aria-label="Open menu">
+          <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile Menu -->
+  <div class="mobile-menu" id="mobileMenu">
+    <button class="mobile-menu__close" onclick="document.getElementById('mobileMenu').classList.remove('active')" aria-label="Close menu">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <a href="#tokens" onclick="document.getElementById('mobileMenu').classList.remove('active')">Tokens</a>
+    <a href="#earning" onclick="document.getElementById('mobileMenu').classList.remove('active')">Earning</a>
+    <a href="#how-it-works" onclick="document.getElementById('mobileMenu').classList.remove('active')">How It Works</a>
+    <a href="#roadmap" onclick="document.getElementById('mobileMenu').classList.remove('active')">Roadmap</a>
+    <a href="#trust" onclick="document.getElementById('mobileMenu').classList.remove('active')">Trust</a>
+    <a href="#waitlist" class="btn btn--primary" onclick="document.getElementById('mobileMenu').classList.remove('active')">Join Waitlist</a>
+  </div>
+
+  <!-- ============================================
+       HERO
+       ============================================ -->
+  <section class="hero" id="hero">
+    <div class="hero__grid-bg"></div>
+    <div class="hero__glow"></div>
+    <div class="hero__glow-teal"></div>
+
+    <div class="container">
+      <div class="hero__content">
+        <div class="hero__text">
+          <div class="eyebrow reveal">Positive-Reinforcement Commerce</div>
+          <h1 class="heading-xl hero__title reveal reveal-delay-1">
+            Your Reputation Is an Asset You <span class="text-gradient-gold">Earn</span>
+          </h1>
+          <p class="hero__subtitle reveal reveal-delay-2">
+            The first e-commerce marketplace that rewards honesty, quality, and community. Earn crypto tokens for being a good participant — never buy your way to trust.
+          </p>
+          <div class="hero__actions reveal reveal-delay-3">
+            <a href="#waitlist" class="btn btn--primary">
+              Join the Waitlist
+              <span class="btn-icon"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+            </a>
+            <a href="#tokens" class="btn btn--ghost">
+              Read the Whitepaper
+              <span class="btn-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
+            </a>
+          </div>
+        </div>
+        <div class="hero__image reveal reveal-delay-3">
+          <img src="images/hero-rune.png" alt="Golden karma rune stone with teal orbital traces" loading="eager">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================
+       PROBLEM SECTION
+       ============================================ -->
+  <div class="section-divider"></div>
+
+  <section class="section problem" id="problem">
+    <div class="container">
+      <div class="eyebrow reveal">The Problem</div>
+      <h2 class="heading-lg reveal reveal-delay-1">E-Commerce Is Broken</h2>
+      <p class="text-lg reveal reveal-delay-2" style="max-width: 640px; margin: 20px auto 0;">
+        Platforms punish bad behavior but never reward the good. Reviews are gamed, vendors get deplatformed overnight, and communities own nothing.
+      </p>
+
+      <div class="problem__grid">
+        <!-- Card 1 -->
+        <div class="problem__card reveal reveal-delay-1">
+          <div class="problem__card-icon">
+            <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <h3>Fake Reviews Everywhere</h3>
+          <p>30% of online reviews are fabricated. Platforms can't tell the difference because reputation has no cost and no weight. Trust is a marketing budget, not a track record.</p>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="problem__card reveal reveal-delay-2">
+          <div class="problem__card-icon">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          </div>
+          <h3>Vendors Are Disposable</h3>
+          <p>Years of work wiped out by an algorithm update. No portable reputation, no recourse. Amazon, Etsy, and Shopify own your customers, your reviews, your identity.</p>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="problem__card reveal reveal-delay-3">
+          <div class="problem__card-icon">
+            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <h3>Communities Own Nothing</h3>
+          <p>You write reviews, answer questions, build the platform's value — and get nothing. No equity, no governance, no share in the upside. Platforms extract; communities give.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================
+       THE SOLUTION — THREE TOKENS
+       ============================================ -->
+  <div class="section-divider"></div>
+
+  <section class="section tokens" id="tokens">
+    <div class="container">
+      <div class="tokens__header">
+        <div class="eyebrow reveal">The Solution</div>
+        <h2 class="heading-lg reveal reveal-delay-1">Three Tokens. One Economy.</h2>
+        <p class="text-lg reveal reveal-delay-2" style="max-width: 640px; margin: 20px auto 0;">
+          A system where paying, earning, and saving are distinct — and reputation can never be bought.
+        </p>
+      </div>
+
+      <div class="tokens__visual reveal">
+        <img src="images/token-trio.png" alt="Three tokens — gold KDEX, teal KRUNE, silver KSHRD — connected in triangular formation">
+      </div>
+
+      <div class="tokens__grid">
+        <!-- KDEX -->
+        <div class="token-card token-card--kdex reveal reveal-delay-1">
+          <span class="token-card__symbol">$KDEX</span>
+          <h3 class="token-card__name">KarmaDex</h3>
+          <p class="token-card__role">Investment & Governance</p>
+          <p class="token-card__desc">
+            Fixed supply. Trades on Uniswap (Base L2). Gives you governance votes. Required alongside $KRUNE to stake — a hedge fund with $5M of KDEX but zero reputation can't access yield.
+          </p>
+        </div>
+
+        <!-- KRUNE -->
+        <div class="token-card token-card--krune reveal reveal-delay-2">
+          <span class="token-card__symbol">$KRUNE</span>
+          <h3 class="token-card__name">KarmaRune</h3>
+          <p class="token-card__role">Reputation — Earned Only</p>
+          <p class="token-card__desc">
+            Your on-chain proof of good behavior. Earning scales logarithmically with purchase value, and multiplies based on review quality. A detailed photo review on a $100 purchase earns 30 KRUNE. A throwaway "5 stars" earns 7.
+          </p>
+
+          <ul class="earn-list">
+            <li>
+              <span class="earn-list__action">Detailed photo review ($100 item)</span>
+              <span class="earn-list__reward">+30 KRUNE</span>
+            </li>
+            <li>
+              <span class="earn-list__action">First review on a new product</span>
+              <span class="earn-list__reward">3x bonus</span>
+            </li>
+            <li>
+              <span class="earn-list__action">Referral (still active at 90 days)</span>
+              <span class="earn-list__reward">+30 KRUNE</span>
+            </li>
+            <li>
+              <span class="earn-list__action">Review gets 50+ helpful votes</span>
+              <span class="earn-list__reward">2x retroactive</span>
+            </li>
+            <li>
+              <span class="earn-list__action">26-week consistency streak</span>
+              <span class="earn-list__reward">1.3x multiplier</span>
+            </li>
+          </ul>
+
+          <div class="token-card__badge">
+            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Cannot be bought — only earned
+          </div>
+        </div>
+
+        <!-- KSHRD -->
+        <div class="token-card token-card--kshd reveal reveal-delay-3">
+          <span class="token-card__symbol">$KSHRD</span>
+          <h3 class="token-card__name">KarmaShard</h3>
+          <p class="token-card__role">Yield — Dual Redemption</p>
+          <p class="token-card__desc">
+            Stake $KRUNE + $KDEX together to generate $KSHRD. You need both earned reputation and invested capital — that's the anti-whale mechanic. Redeem for USDC (5% fee) or KDEX (2% fee + bonus KRUNE). Choosing KDEX keeps value in the system and earns you more.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================
+       EARNING MECHANICS
+       ============================================ -->
+  <section class="section earning" id="earning">
+    <div class="container">
+      <div class="earning__header">
+        <div class="eyebrow eyebrow--teal reveal">Earning mechanics</div>
+        <h2 class="heading-lg reveal reveal-delay-1">Not All Actions Are Equal</h2>
+        <p class="text-lg reveal reveal-delay-2" style="max-width: 620px; margin: 20px auto 0;">
+          KRUNE earning is logarithmic, quality-weighted, and capped. Bigger purchases earn more, but not proportionally. Better reviews earn disproportionately more.
+        </p>
+      </div>
+
+      <div class="earning__grid">
+        <div class="earning__card earning__card--log reveal reveal-delay-1">
+          <div class="earning__card-label">Purchase scaling</div>
+          <h3>Logarithmic, not linear</h3>
+          <p>A $100 purchase earns 15 base KRUNE. A $1,000 purchase earns 30 — not 150. Hard cap prevents whales from grinding reputation through spending.</p>
+          <div class="earning__scale">
+            <div class="earning__bar"></div>
+            <div class="earning__bar"></div>
+            <div class="earning__bar"></div>
+            <div class="earning__bar"></div>
+            <div class="earning__bar"></div>
+            <div class="earning__bar"></div>
+            <div class="earning__bar"></div>
+            <div class="earning__bar"></div>
+          </div>
+        </div>
+
+        <div class="earning__card earning__card--quality reveal reveal-delay-2">
+          <div class="earning__card-label">Review quality</div>
+          <h3>Detail multiplies your reward</h3>
+          <p>The same purchase earns 4x more KRUNE with a detailed photo review than a one-liner. AI scores specifics, comparisons, and real usage context.</p>
+          <div class="earning__multiplier">
+            <div class="earning__mult-item earning__mult-item--low">0.5x<br><span style="font-weight: 400; font-size: 0.65rem; font-family: var(--font-body);">generic</span></div>
+            <div class="earning__mult-item earning__mult-item--mid">1.5x<br><span style="font-weight: 400; font-size: 0.65rem; font-family: var(--font-body);">+ photos</span></div>
+            <div class="earning__mult-item earning__mult-item--high">2.5x<br><span style="font-weight: 400; font-size: 0.65rem; font-family: var(--font-body);">video</span></div>
+          </div>
+        </div>
+
+        <div class="earning__card earning__card--helpfulness reveal reveal-delay-3">
+          <div class="earning__card-label">Delayed bonus</div>
+          <h3>Helpfulness pays retroactively</h3>
+          <p>30 days after posting, if other buyers mark your review as helpful: 5+ votes = +25%, 15+ = +50%, 50+ = double your original earning. Nearly impossible to game.</p>
+        </div>
+
+        <div class="earning__card earning__card--first reveal reveal-delay-4">
+          <div class="earning__card-label">Coverage incentive</div>
+          <h3>First reviews earn 3x</h3>
+          <p>Products with 0-2 reviews get a 3x multiplier. KRUNE flows toward the parts of the marketplace that need coverage most. Self-balancing by design.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================
+       HOW IT WORKS
+       ============================================ -->
+  <section class="section how-it-works" id="how-it-works">
+    <div class="container">
+      <div class="how-it-works__header">
+        <div class="eyebrow eyebrow--teal reveal">How It Works</div>
+        <h2 class="heading-lg reveal reveal-delay-1">Four Steps to Earned Trust</h2>
+        <p class="text-lg reveal reveal-delay-2" style="max-width: 580px; margin: 20px auto 0;">
+          Whether you buy or sell, the system rewards you for making the marketplace better.
+        </p>
+      </div>
+
+      <div class="steps">
+        <!-- Step 1 -->
+        <div class="step reveal reveal-delay-1">
+          <div class="step__number">01</div>
+          <div class="step__icon">
+            <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          </div>
+          <h3>Browse & Buy</h3>
+          <p>Shop from verified vendors with real reputation scores. Pay with $KDEX for lower fees and instant settlement.</p>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step reveal reveal-delay-2">
+          <div class="step__number">02</div>
+          <div class="step__icon">
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <h3>Earn $KRUNE</h3>
+          <p>Write detailed reviews, help buyers, refer vendors. Earning scales with purchase value and review quality. Consistency streaks multiply your rate.</p>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step reveal reveal-delay-3">
+          <div class="step__number">03</div>
+          <div class="step__icon">
+            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/></svg>
+          </div>
+          <h3>Stake KRUNE + KDEX</h3>
+          <p>Pair earned reputation with invested capital. Both halves required — whales can't buy their way in without months of real participation.</p>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="step reveal reveal-delay-4">
+          <div class="step__number">04</div>
+          <div class="step__icon">
+            <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </div>
+          <h3>Redeem or Recycle</h3>
+          <p>Redeem $KSHRD for USDC to cash out, or choose KDEX at a lower fee and earn bonus KRUNE. Staying in the system pays better than leaving.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================
+       FOR VENDORS
+       ============================================ -->
+  <div class="section-divider"></div>
+
+  <section class="section" id="vendors">
+    <div class="container">
+      <div class="vendors__content">
+        <div class="vendors__text">
+          <div class="eyebrow eyebrow--teal reveal">For Vendors</div>
+          <h2 class="heading-lg reveal reveal-delay-1">
+            Sell on a Platform That <span class="text-teal">Values</span> You
+          </h2>
+          <p class="text-lg reveal reveal-delay-2">
+            Lower fees than Amazon and Shopify. Token incentives for quality. A reputation system that travels with you, not the platform.
+          </p>
+
+          <ul class="vendors__features">
+            <li class="vendors__feature reveal reveal-delay-2">
+              <div class="vendors__feature-icon">
+                <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+              <div>
+                <h4>3-5% Transaction Fees</h4>
+                <p>Not 15-30% like the incumbents. Your margins are yours to keep.</p>
+              </div>
+            </li>
+            <li class="vendors__feature reveal reveal-delay-3">
+              <div class="vendors__feature-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <div>
+                <h4>Portable Reputation</h4>
+                <p>Your $KRUNE score is yours forever. No platform can erase years of trust.</p>
+              </div>
+            </li>
+            <li class="vendors__feature reveal reveal-delay-4">
+              <div class="vendors__feature-icon">
+                <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <div>
+                <h4>Token-Incentivized Quality</h4>
+                <p>Earn $KRUNE for every completed order, resolved dispute, and glowing review.</p>
+              </div>
+            </li>
+            <li class="vendors__feature reveal reveal-delay-5">
+              <div class="vendors__feature-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              </div>
+              <div>
+                <h4>CBD & Cannabis Friendly</h4>
+                <p>Our first vertical welcomes what others ban. Swiss-regulated, fully compliant.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div class="vendors__image reveal reveal-delay-2">
+          <img src="images/trust-network.png" alt="Hexagonal reputation network connecting vendors and buyers">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================
+       ROADMAP
+       ============================================ -->
+  <section class="section roadmap" id="roadmap">
+    <div class="container">
+      <div class="roadmap__header">
+        <div class="eyebrow reveal">Roadmap</div>
+        <h2 class="heading-lg reveal reveal-delay-1">From Points to Protocol</h2>
+        <p class="text-lg reveal reveal-delay-2" style="max-width: 600px; margin: 20px auto 0;">
+          We chose the hard path because shortcuts create rug-pulls. Prove the model first, then decentralize.
+        </p>
+      </div>
+
+      <div class="roadmap__timeline">
+        <!-- Phase 1 -->
+        <div class="roadmap__phase reveal reveal-delay-1">
+          <span class="roadmap__phase-label">Phase 1</span>
+          <h3>MVP Marketplace</h3>
+          <p class="roadmap__phase-time">Year 1 — Now</p>
+          <p class="roadmap__phase-desc">
+            Launch the marketplace with off-chain points. No blockchain yet — prove product-market fit first with real users and real transactions.
+          </p>
+          <ul class="roadmap__milestones">
+            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> 500+ monthly active users</li>
+            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> CHF 100k+/month GMV</li>
+            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> CBD/cannabis vertical in Basel</li>
+            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> AI-powered moderation live</li>
+          </ul>
+        </div>
+
+        <!-- Phase 2 -->
+        <div class="roadmap__phase reveal reveal-delay-2">
+          <span class="roadmap__phase-label">Phase 2</span>
+          <h3>Tokenize & Stake</h3>
+          <p class="roadmap__phase-time">Years 2-3</p>
+          <p class="roadmap__phase-desc">
+            Migrate $KRUNE on-chain via Base (Ethereum L2). Launch $KDEX. Anti-whale staking: pair earned KRUNE with purchased KDEX to generate $KSHRD with dual redemption.
+          </p>
+          <ul class="roadmap__milestones">
+            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> $KRUNE + $KDEX on Base (L2)</li>
+            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> $KSHRD staking with dual redemption</li>
+            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> DAO governance proposals</li>
+            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Multi-vertical expansion</li>
+          </ul>
+        </div>
+
+        <!-- Phase 3 -->
+        <div class="roadmap__phase reveal reveal-delay-3">
+          <span class="roadmap__phase-label">Phase 3</span>
+          <h3>Open Protocol</h3>
+          <p class="roadmap__phase-time">Years 4-5</p>
+          <p class="roadmap__phase-desc">
+            Full decentralization. Release an open SDK so any e-commerce platform can integrate the karma economy. Community-owned infrastructure.
+          </p>
+          <ul class="roadmap__milestones">
+            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Open protocol SDK</li>
+            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Full decentralization</li>
+            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Cross-platform reputation</li>
+            <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Community-owned treasury</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================
+       TRUST & SECURITY
+       ============================================ -->
+  <div class="section-divider"></div>
+
+  <section class="section" id="trust">
+    <div class="container">
+      <div class="trust__content">
+        <div class="trust__image reveal">
+          <img src="images/hero-rune.png" alt="Golden karma rune — the core of TradeKarma's reputation system">
+        </div>
+        <div class="trust__text">
+          <div class="eyebrow reveal">Trust & Security</div>
+          <h2 class="heading-lg reveal reveal-delay-1">
+            Anti-Rug-Pull <span class="text-gold">by Design</span>
+          </h2>
+          <p class="text-lg reveal reveal-delay-2">
+            We didn't bolt security on as an afterthought. Every architectural decision was made to ensure no single actor — including us — can manipulate the system.
+          </p>
+
+          <div class="trust__badges reveal reveal-delay-3">
+            <div class="trust__badge">
+              <div class="trust__badge-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <div>
+                <h4>Swiss FINMA Compliant</h4>
+                <p>Built under Swiss regulatory framework from day one.</p>
+              </div>
+            </div>
+
+            <div class="trust__badge">
+              <div class="trust__badge-icon">
+                <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </div>
+              <div>
+                <h4>Multi-Sig Treasury</h4>
+                <p>No single key controls funds. Multiple signers required.</p>
+              </div>
+            </div>
+
+            <div class="trust__badge">
+              <div class="trust__badge-icon">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              </div>
+              <div>
+                <h4>No ICO / No Presale</h4>
+                <p>$KRUNE is earned, never sold. No concentrated ownership.</p>
+              </div>
+            </div>
+
+            <div class="trust__badge">
+              <div class="trust__badge-icon">
+                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg>
+              </div>
+              <div>
+                <h4>Audited Contracts</h4>
+                <p>All smart contracts independently audited before deployment.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================
+       STATS / SOCIAL PROOF
+       ============================================ -->
+  <section class="stats" id="stats">
+    <div class="container">
+      <div class="stats__grid">
+        <div class="stat reveal reveal-delay-1">
+          <div class="stat__number">3</div>
+          <div class="stat__label">Tokens, Three Jobs</div>
+        </div>
+        <div class="stat reveal reveal-delay-2">
+          <div class="stat__number">0%</div>
+          <div class="stat__label">KRUNE That Can Be Bought</div>
+        </div>
+        <div class="stat reveal reveal-delay-3">
+          <div class="stat__number">5×</div>
+          <div class="stat__label">Earning Multipliers Stack</div>
+        </div>
+        <div class="stat reveal reveal-delay-4">
+          <div class="stat__number">2</div>
+          <div class="stat__label">KSHRD Redemption Paths</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================
+       FINAL CTA
+       ============================================ -->
+  <section class="section cta-section" id="waitlist">
+    <div class="cta-section__glow"></div>
+    <div class="container">
+      <div class="cta-section__content">
+        <div class="eyebrow reveal" style="justify-content: center;">Join the Movement</div>
+        <h2 class="heading-lg reveal reveal-delay-1">
+          Be Among the First to <span class="text-gradient-gold">Earn</span>,<br>Not Buy, Your Reputation
+        </h2>
+        <p class="text-lg reveal reveal-delay-2">
+          Early members shape the economy. Join the waitlist to get founding access, early $KRUNE earning opportunities, and a voice in governance.
+        </p>
+
+        <form class="cta-form reveal reveal-delay-3" onsubmit="handleWaitlist(event)">
+          <input type="email" placeholder="Enter your email" required aria-label="Email address">
+          <button type="submit" class="btn btn--primary">Join Waitlist</button>
+        </form>
+        <p class="cta-note reveal reveal-delay-4">No spam. No token sales. Just updates on launch.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================
+       FOOTER
+       ============================================ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__inner">
+        <div class="footer__brand">
+          <div class="footer__logo">
+            <div class="footer__logo-mark">
+              <svg viewBox="0 0 24 24"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/></svg>
+            </div>
+            TradeKarma
+          </div>
+          <p class="footer__desc">
+            A positive-reinforcement token economy for e-commerce. Built in Basel, Switzerland. Where reputation is earned, never bought.
+          </p>
+          <div class="footer__social">
+            <!-- X / Twitter -->
+            <a href="#" aria-label="X (Twitter)">
+              <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </a>
+            <!-- Telegram -->
+            <a href="#" aria-label="Telegram">
+              <svg viewBox="0 0 24 24"><path d="M22.05 1.577c-.393-.016-.784.08-1.117.235-.484.186-4.92 1.902-9.41 3.64-2.26.873-4.518 1.746-6.256 2.415-1.737.67-3.045 1.168-3.114 1.192-.46.16-1.082.362-1.61.984-.133.156-.218.368-.197.625.021.258.162.477.346.636.35.303.828.476 1.267.613l3.597 1.097c.238.765 1.535 4.868 1.815 5.737.159.498.38.846.707 1.1.074.057.155.1.24.132.056.024.115.04.175.05.24.081.48.11.64.067l2.303-1.174 3.156 2.425c.037.03.078.056.12.08.556.37 1.15.453 1.638.237.49-.216.847-.596 1.05-1.088l3.96-18.46c.158-.722.05-1.378-.297-1.84-.346-.462-.903-.722-1.548-.747zm-.534 1.924L17.63 20.26c-.02.058-.065.136-.152.17-.087.032-.187.01-.267-.04l-3.765-2.894-.025-.02-2.834 1.447.868-3.454 8.11-7.89c.2-.192.157-.464-.09-.402-.33.086-10.08 6.27-10.08 6.27l-3.753-1.145 12.407-4.794 5.075-1.963c.186-.072.263-.032.313.013.05.045.1.13.064.329z"/></svg>
+            </a>
+            <!-- Discord -->
+            <a href="#" aria-label="Discord">
+              <svg viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.095 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.095 2.157 2.42 0 1.333-.947 2.418-2.157 2.418z"/></svg>
+            </a>
+            <!-- LinkedIn -->
+            <a href="#" aria-label="LinkedIn">
+              <svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+            </a>
+          </div>
+        </div>
+
+        <div class="footer__col">
+          <h4>Product</h4>
+          <ul>
+            <li><a href="#tokens">Token Economy</a></li>
+            <li><a href="#how-it-works">How It Works</a></li>
+            <li><a href="#vendors">For Vendors</a></li>
+            <li><a href="#roadmap">Roadmap</a></li>
+          </ul>
+        </div>
+
+        <div class="footer__col">
+          <h4>Resources</h4>
+          <ul>
+            <li><a href="#">Whitepaper</a></li>
+            <li><a href="#">Documentation</a></li>
+            <li><a href="#">Brand Kit</a></li>
+            <li><a href="#">Blog</a></li>
+          </ul>
+        </div>
+
+        <div class="footer__col">
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+            <li><a href="#">Token Disclaimer</a></li>
+            <li><a href="#">FINMA Compliance</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer__bottom">
+        <p>&copy; 2026 TradeKarma. All rights reserved.</p>
+        <div class="footer__tagline">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="#ef4444" stroke="none"/></svg>
+          Built in Basel, Switzerland
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============================================
+       SCRIPTS
+       ============================================ -->
+  <script>
+    // Nav scroll effect
+    const nav = document.getElementById('nav');
+    let lastScroll = 0;
+
+    window.addEventListener('scroll', () => {
+      const currentScroll = window.pageYOffset;
+      if (currentScroll > 60) {
+        nav.classList.add('scrolled');
+      } else {
+        nav.classList.remove('scrolled');
+      }
+      lastScroll = currentScroll;
+    }, { passive: true });
+
+    // Scroll reveal
+    const revealElements = document.querySelectorAll('.reveal');
+
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, {
+      threshold: 0.1,
+      rootMargin: '0px 0px -60px 0px'
+    });
+
+    revealElements.forEach(el => revealObserver.observe(el));
+
+    // Counter animation
+    const counters = document.querySelectorAll('.counter');
+
+    const counterObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const counter = entry.target;
+          const target = parseInt(counter.dataset.target);
+          const duration = 2000;
+          const start = performance.now();
+
+          function updateCounter(now) {
+            const elapsed = now - start;
+            const progress = Math.min(elapsed / duration, 1);
+            // Ease out quart
+            const eased = 1 - Math.pow(1 - progress, 4);
+            const current = Math.floor(eased * target);
+
+            if (target >= 10000) {
+              counter.textContent = current.toLocaleString();
+            } else {
+              counter.textContent = current.toLocaleString();
+            }
+
+            if (progress < 1) {
+              requestAnimationFrame(updateCounter);
+            } else {
+              counter.textContent = target.toLocaleString();
+            }
+          }
+
+          requestAnimationFrame(updateCounter);
+          counterObserver.unobserve(counter);
+        }
+      });
+    }, { threshold: 0.5 });
+
+    counters.forEach(c => counterObserver.observe(c));
+
+    // Waitlist form handler
+    function handleWaitlist(e) {
+      e.preventDefault();
+      const input = e.target.querySelector('input');
+      const email = input.value;
+      const btn = e.target.querySelector('button');
+
+      btn.textContent = 'Joined!';
+      btn.style.background = 'var(--teal)';
+      input.value = '';
+      input.placeholder = 'You\'re on the list!';
+      input.disabled = true;
+      btn.disabled = true;
+
+      setTimeout(() => {
+        btn.textContent = 'Join Waitlist';
+        btn.style.background = '';
+        input.placeholder = 'Enter your email';
+        input.disabled = false;
+        btn.disabled = false;
+      }, 3000);
+    }
+
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          e.preventDefault();
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
