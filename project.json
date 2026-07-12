@@ -1,0 +1,8 @@
+{
+  "name": "TradeKarma",
+  "description": "Ethical e-commerce platform with a three-token economy — KRUNE (earned reputation), KDEX (investment/governance), KSHRD (yield). Built in Basel.",
+  "url": "https://tradekarmanet.vercel.app",
+  "platform": "Vercel",
+  "framework": "Static HTML",
+  "status": "live"
+}

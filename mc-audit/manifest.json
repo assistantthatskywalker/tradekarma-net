@@ -1,0 +1,18 @@
+{
+  "run_name": "mc-registry-audit-fix",
+  "workdir": "/home/skywalker/ai-workspace/projects/tradekarma_net/mc-audit",
+  "max_parallel": 1,
+  "tasks": [
+    {
+      "key": "registry-fix",
+      "engine": "claude",
+      "model": "claude-opus-4-8",
+      "task_type": "fix",
+      "timeout_s": 1500,
+      "verified": "check_registry.sh passes: single TradeKarma card with url+Vercel, no curated duplicate, no stray .well-known, 1:1 folder-to-card on projects+webapps, tony untouched, websites covered",
+      "spec": "Fix the Mission Control projects-page card issues. MANDATORY working style — use these skills: (1) ponytail (~/.claude/skills/ponytail): laziest minimal fix that works, use existing templates/mechanisms, invent NOTHING new; (2) codegraph: cd /home/skywalker/ai-workspace/agent-os/mission-control and use `codegraph init && codegraph index .` then `codegraph query`/grep to navigate src/web/registry/{scan.ts,load.ts} and confirm how cards are discovered BEFORE editing anything; (3) graphify: /home/skywalker/ai-workspace/projects/tradekarma_net/graphify-out/graph.json exists — use `graphify query` there if you need TradeKarma project context.\n\nCONTEXT (verified facts, do not re-derive): The MC Apps/Projects page data source is loadApps() in mission-control/src/web/registry/load.ts — it merges curated config/webapps.json with an auto-scan of ~/ai-workspace/projects, ~/ai-workspace/webapps, ~/ai-workspace/agent-os (scan.ts). A folder's project.json overrides auto-detection — THAT is the existing per-project template (see projects/diespiesser/project.json or projects/artist-booking-ai-management-system/project.json for the exact shape). The TradeKarma card is auto-scanned from projects/tradekarma_net but shows NO url (folder name tradekarma_net is not domain-style so detectDeployUrl returns empty) — that is why the card shows no online status and no preview. The site IS live at https://tradekarmanet.vercel.app on Vercel.\n\nDO EXACTLY THIS (ponytail — nothing more):\n1. Create /home/skywalker/ai-workspace/projects/tradekarma_net/project.json following the EXISTING template shape used by sibling projects: name \"TradeKarma\", description \"Ethical e-commerce platform with a three-token economy — KRUNE (earned reputation), KDEX (investment/governance), KSHRD (yield). Built in Basel.\", url \"https://tradekarmanet.vercel.app\", platform \"Vercel\", framework \"Static HTML\", status \"live\". Match the field style of diespiesser/project.json. No extra fields, no invented schema.\n2. Delete the stray directory /home/skywalker/ai-workspace/projects/tradekarma_net/.well-known (it was an invented mechanism; verified: nothing in mission-control reads .well-known from project folders).\n3. Verify config/webapps.json contains NO tradekarma entry (a duplicate curated entry was already reverted — just confirm).\n4. DO NOT touch: scan.ts / load.ts logic, the tony workspace handling (projects/tony is a member workspace surfaced via tnt-projects — leave every part of that alone), any other project folder, the websites page (all websites/<slug>/website.json already exist and are healthy), webapps.json entries for other apps.\n5. Run bash /home/skywalker/ai-workspace/projects/tradekarma_net/mc-audit/check_registry.sh — it must print VERDICT: PASS. If any rule fails, fix ONLY what that rule names, in the laziest way consistent with existing mechanisms.\n6. Write a short SUMMARY.md in your working directory listing: what you changed (files), what you verified via codegraph, and the final check output.",
+      "expect_files": ["SUMMARY.md"],
+      "check": "bash /home/skywalker/ai-workspace/projects/tradekarma_net/mc-audit/check_registry.sh"
+    }
+  ]
+}
