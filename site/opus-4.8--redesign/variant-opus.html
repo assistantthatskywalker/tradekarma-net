@@ -774,20 +774,17 @@
     els.forEach(function(el){ io.observe(el); });
   })();
 
-  /* ---------- Hero video (deferred until after load so it never competes with LCP) ---------- */
+  /* ---------- Hero video (respects reduced motion) ---------- */
   (function(){
     var v = document.getElementById('hero-video');
-    if(!v || reduce) return;
-    var start = function(){
+    if(v && !reduce){
       var tryPlay = function(){ var p = v.play(); if(p && p.catch) p.catch(function(){}); };
       if('IntersectionObserver' in window){
         new IntersectionObserver(function(es){
           es.forEach(function(e){ e.isIntersecting ? tryPlay() : v.pause(); });
         }, {threshold:0.1}).observe(v);
       } else { tryPlay(); }
-    };
-    if(document.readyState === 'complete') setTimeout(start, 700);
-    else window.addEventListener('load', function(){ setTimeout(start, 700); });
+    }
   })();
 
   /* ---------- Subtle parallax ---------- */
