@@ -33,13 +33,12 @@
     }
 
     .logo {
-      font-family: 'Syne', sans-serif;
-      font-size: 1.5rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
     }
-
-    .logo span { color: #d4af37; }
+    .logo img.logo-mark { height: 34px; width: auto; display: block; filter: drop-shadow(0 6px 16px rgba(212,175,55,0.4)); }
+    .logo img.logo-word { height: 24px; width: auto; display: block; }
 
     .cta-button {
       background: #d4af37;
@@ -544,7 +543,7 @@
 </head>
 <body>
   <header>
-    <div class="logo">Trade<span>Karma</span></div>
+    <div class="logo"><img class="logo-mark" src="assets/img/tradekarma-shard.png" alt=""><img class="logo-word" src="assets/img/tradekarma-wordmark.png" alt="TradeKarma"></div>
     <button class="cta-button">Join Waitlist</button>
   </header>
 

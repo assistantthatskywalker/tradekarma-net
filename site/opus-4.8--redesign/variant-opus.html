@@ -106,10 +106,9 @@
   header.site.scrolled{border-bottom-color:var(--line);background:rgba(10,10,10,0.9);}
   .nav{display:flex;align-items:center;justify-content:space-between;gap:1.5rem;height:68px;}
   .brand{display:inline-flex;align-items:center;gap:0.7rem;font-weight:600;letter-spacing:0.01em;}
-  .brand .mark{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;flex:none;
-    background:linear-gradient(150deg,#1a1712,#0c0b0a);border:1px solid var(--line-strong);
-    box-shadow:0 0 0 1px rgba(212,175,55,0.08),0 8px 22px -12px rgba(212,175,55,0.5);}
-  .brand .mark svg{width:19px;height:19px;}
+  .brand .mark{height:34px;width:auto;display:grid;place-items:center;flex:none;}
+  .brand .mark img{height:34px;width:auto;display:block;filter:drop-shadow(0 6px 16px rgba(212,175,55,0.4));}
+  .brand .wordmark{height:23px;width:auto;display:block;}
   .brand b{font-family:"Fraunces",serif;font-weight:600;font-size:1.16rem;letter-spacing:-0.01em;}
   .nav-links{display:flex;align-items:center;gap:2rem;}
   .nav-links a{font-size:0.9rem;color:var(--muted);transition:color .25s var(--ease);position:relative;}
@@ -420,10 +419,8 @@
 <header class="site" id="site-header">
   <div class="wrap nav">
     <a class="brand" href="#top" aria-label="TradeKarma home">
-      <span class="mark" aria-hidden="true">
-        <svg viewBox="0 0 32 32" fill="none"><path d="M9 7v18M9 16l9-9M9 16l9 9" stroke="#d4af37" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </span>
-      <b>TradeKarma</b>
+      <span class="mark" aria-hidden="true"><img src="assets/img/tradekarma-shard.png" alt=""></span>
+      <img class="wordmark" src="assets/img/tradekarma-wordmark.png" alt="TradeKarma">
     </a>
     <nav class="nav-links" aria-label="Primary">
       <a href="#problem">The Problem</a>
@@ -716,8 +713,8 @@
     <div class="foot-top">
       <div class="foot-brand reveal">
         <a class="brand" href="#top" aria-label="TradeKarma home">
-          <span class="mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M9 7v18M9 16l9-9M9 16l9 9" stroke="#d4af37" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-          <b>TradeKarma</b>
+          <span class="mark" aria-hidden="true"><img src="assets/img/tradekarma-shard.png" alt=""></span>
+          <img class="wordmark" src="assets/img/tradekarma-wordmark.png" alt="TradeKarma">
         </a>
         <p>The e-commerce protocol where reputation is an asset you earn through good behavior — never one you buy.</p>
         <p class="foot-tag">Earn Your Reputation, Never Buy It.</p>
