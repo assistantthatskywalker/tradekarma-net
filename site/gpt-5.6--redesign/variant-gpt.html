@@ -550,7 +550,7 @@
   <main>
     <section class="hero">
       <canvas id="hero-canvas"></canvas>
-      <video autoplay muted loop playsinline preload="none" poster="assets/img/hero-bg.webp">
+      <video id="hero-video" muted loop playsinline preload="none" poster="assets/img/hero-bg.webp">
         <source src="assets/video/hero-loop.mp4" type="video/mp4">
       </video>
       <div class="hero-content">
@@ -762,6 +762,15 @@
   </footer>
 
   <script>
+    // Hero video: defer playback until after load so it never competes with LCP
+    (function(){
+      var v = document.getElementById('hero-video');
+      if(!v || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+      var start = function(){ var p = v.play(); if(p && p.catch) p.catch(function(){}); };
+      if(document.readyState === 'complete') setTimeout(start, 700);
+      else window.addEventListener('load', function(){ setTimeout(start, 700); });
+    })();
+
     // Intersection Observer for scroll-reveal
     const reveals = document.querySelectorAll('.problem-card, .token-card, .mechanic-card, .step-card, .phase-card');
     const observer = new IntersectionObserver((entries) => {
