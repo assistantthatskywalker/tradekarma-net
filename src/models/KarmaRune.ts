@@ -4,41 +4,11 @@
  * Cannot be purchased; earned only through participation.
  */
 
-export interface KarmaRuneBalance {
-  userId: string;
-  balance: number;
-  lastUpdated: Date;
-}
+import { Balance, BalanceLedger } from './Ledger';
 
-export class KarmaRuneLedger {
-  balances: Map<string, KarmaRuneBalance> = new Map();
+export type KarmaRuneBalance = Balance;
 
-  get(userId: string): number {
-    return this.balances.get(userId)?.balance || 0;
-  }
-
-  set(userId: string, amount: number): void {
-    this.balances.set(userId, {
-      userId,
-      balance: amount,
-      lastUpdated: new Date(),
-    });
-  }
-
-  add(userId: string, amount: number): number {
-    const current = this.get(userId);
-    const newBalance = current + amount;
-    this.set(userId, newBalance);
-    return newBalance;
-  }
-
-  subtract(userId: string, amount: number): boolean {
-    const current = this.get(userId);
-    if (current < amount) return false;
-    this.set(userId, current - amount);
-    return true;
-  }
-
+export class KarmaRuneLedger extends BalanceLedger {
   getAllBalances(): KarmaRuneBalance[] {
     return Array.from(this.balances.values());
   }

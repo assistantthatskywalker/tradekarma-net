@@ -81,6 +81,34 @@ describe('Staking & Anti-Whale Gate', () => {
     });
   });
 
+  describe('unstake', () => {
+    it('early unstake forfeits yield and returns principal', () => {
+      const ctx = makeContext('u');
+      ctx.kruneLedger.set('u', 500);
+      ctx.kdexLedger.set('u', 500);
+      const res = stake(ctx, 500, 500);
+      accrueGlobalYield(ctx);
+
+      const out = unstake(ctx, res.stakeId!);
+      expect(out.success).toBe(true);
+      expect(out.yieldAmount).toBe(0);
+      expect(ctx.kruneLedger.get('u')).toBe(500);
+      expect(ctx.kdexLedger.get('u')).toBe(500);
+      expect(ctx.shardVault.stakes.size).toBe(0);
+    });
+
+    it('rejects an unknown or foreign stakeId', () => {
+      const ctx = makeContext('u');
+      ctx.kruneLedger.set('u', 500);
+      ctx.kdexLedger.set('u', 500);
+      stake(ctx, 100, 100);
+
+      expect(unstake(ctx, 'no-such-stake').success).toBe(false);
+      expect(unstake(ctx, 'other-user-1234').success).toBe(false);
+      expect(ctx.shardVault.stakes.size).toBe(1); // nothing was touched
+    });
+  });
+
   describe('yield accrual', () => {
     it('accrues positive yield on the geometric mean over time', () => {
       const ctx = makeContext('u');

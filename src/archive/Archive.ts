@@ -4,7 +4,7 @@
  * Version: hash259-v1
  */
 
-import * as crypto from 'crypto';
+import { link } from './hash259';
 
 export interface ArchivedTransaction {
   id: string;
@@ -26,15 +26,9 @@ export enum AccessRole {
 export class TransactionArchive {
   private transactions: ArchivedTransaction[] = [];
   private lastHash: string = 'genesis';
-  private accessControl: Map<string, AccessRole> = new Map();
-
-  constructor() {
-    // Default: system role
-    this.accessControl.set('system', AccessRole.SYSTEM);
-  }
 
   /**
-   * Add transaction to archive with hash linkage.
+   * Add transaction to archive with hash linkage (hash259 chain).
    * Returns hash for verification.
    */
   append(
@@ -44,8 +38,10 @@ export class TransactionArchive {
     amount: number,
     timestamp: Date
   ): string {
-    const data = `${id}|${userId}|${type}|${amount}|${timestamp.toISOString()}|${this.lastHash}`;
-    const hash = crypto.createHash('sha256').update(data).digest('hex');
+    const hash = link(
+      this.lastHash,
+      `${id}|${userId}|${type}|${amount}|${timestamp.toISOString()}`
+    );
 
     const tx: ArchivedTransaction = {
       id,
@@ -75,11 +71,10 @@ export class TransactionArchive {
         return false; // Chain broken
       }
 
-      const data = `${tx.id}|${tx.userId}|${tx.type}|${tx.amount}|${tx.timestamp.toISOString()}|${tx.prevHash}`;
-      const expectedHash = crypto
-        .createHash('sha256')
-        .update(data)
-        .digest('hex');
+      const expectedHash = link(
+        tx.prevHash,
+        `${tx.id}|${tx.userId}|${tx.type}|${tx.amount}|${tx.timestamp.toISOString()}`
+      );
 
       if (tx.hash !== expectedHash) {
         return false; // Hash mismatch (tampered)

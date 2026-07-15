@@ -8,7 +8,7 @@
  */
 
 import { User } from '../models/User';
-import { TransactionLog } from '../models/Transaction';
+import { Transaction, TransactionLog } from '../models/Transaction';
 import { KarmaRuneLedger } from '../models/KarmaRune';
 import { KarmaDexLedger, KarmaShardVault } from '../models/Tokens';
 import {
@@ -94,6 +94,12 @@ export class AgentInterface {
       const ctx = { userId: req.userId, user, transactionLog: this.state.transactionLog };
       const p = req.payload;
 
+      // Every KRUNE award is mirrored into the ledger (Phase 1 dual bookkeeping).
+      const award = (tx: Transaction): AgentResponse => {
+        this.state.kruneLedger.add(req.userId, tx.amountKRUNE);
+        return { ok: true, data: tx };
+      };
+
       switch (req.capability) {
         case 'read.reputation':
           return { ok: true, data: { balance: user.getReputation() } };
@@ -104,29 +110,17 @@ export class AgentInterface {
             data: this.state.transactionLog.getByUser(req.userId),
           };
 
-        case 'write.review': {
-          const tx = awardReview(ctx, p.productId, p.orderValue, !!p.hasPhotos, p.textLength ?? 0, !!p.isDetailed);
-          this.state.kruneLedger.add(req.userId, tx.amountKRUNE);
-          return { ok: true, data: tx };
-        }
+        case 'write.review':
+          return award(awardReview(ctx, p.productId, p.orderValue, !!p.hasPhotos, p.textLength ?? 0, !!p.isDetailed));
 
-        case 'write.help': {
-          const tx = awardHelpfulness(ctx, p.questionId, p.answerText ?? '');
-          this.state.kruneLedger.add(req.userId, tx.amountKRUNE);
-          return { ok: true, data: tx };
-        }
+        case 'write.help':
+          return award(awardHelpfulness(ctx, p.questionId, p.answerText ?? ''));
 
-        case 'write.referral': {
-          const tx = awardReferral(ctx, p.referredUserId);
-          this.state.kruneLedger.add(req.userId, tx.amountKRUNE);
-          return { ok: true, data: tx };
-        }
+        case 'write.referral':
+          return award(awardReferral(ctx, p.referredUserId));
 
-        case 'write.shipment': {
-          const tx = awardShipment(ctx, p.orderId, p.orderValue, p.daysToShip ?? 0);
-          this.state.kruneLedger.add(req.userId, tx.amountKRUNE);
-          return { ok: true, data: tx };
-        }
+        case 'write.shipment':
+          return award(awardShipment(ctx, p.orderId, p.orderValue, p.daysToShip ?? 0));
 
         case 'stake.quote': {
           const gate = checkAntiWhalGate(this.stakingContext(user));

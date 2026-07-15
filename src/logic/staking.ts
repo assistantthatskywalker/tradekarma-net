@@ -88,11 +88,9 @@ export function stake(
     90
   );
 
-  const stakeId = `${context.userId}-${shard.stakedAt.getTime()}`;
-
   return {
     success: true,
-    stakeId,
+    stakeId: shard.id,
     shard,
   };
 }
@@ -111,12 +109,9 @@ export function unstake(
   yieldAmount?: number;
   error?: string;
 } {
-  const stakes = context.shardVault.getByUser(context.userId);
-  const stake = stakes.find((s) =>
-    stakeId.includes(context.userId)
-  );
+  const stake = context.shardVault.stakes.get(stakeId);
 
-  if (!stake) {
+  if (!stake || stake.userId !== context.userId) {
     return { success: false, error: 'Stake not found' };
   }
 
@@ -125,14 +120,8 @@ export function unstake(
 
   if (!isMatured) {
     // Early unstake: lose yield, recover principal
-    context.kruneLedger.set(
-      context.userId,
-      context.kruneLedger.get(context.userId) + stake.kruneStaked
-    );
-    context.kdexLedger.set(
-      context.userId,
-      context.kdexLedger.get(context.userId) + stake.kdexStaked
-    );
+    context.kruneLedger.add(context.userId, stake.kruneStaked);
+    context.kdexLedger.add(context.userId, stake.kdexStaked);
     context.shardVault.stakes.delete(stakeId);
 
     return {
@@ -143,7 +132,7 @@ export function unstake(
   }
 
   // Normal redemption (mature)
-  const yield_ = context.shardVault.redeem(stakeId, forUSDC);
+  const yield_ = context.shardVault.redeem(stakeId);
 
   // In Phase 2, this would transfer from treasury
   // For Phase 1 (database), just return the amount
@@ -167,15 +156,8 @@ export function unstake(
  */
 export function accrueGlobalYield(context: StakingContext): number {
   let totalYield = 0;
-  const allStakes = Array.from(context.shardVault.stakes.values());
-
-  for (const stake of allStakes) {
-    const yield_ = context.shardVault.accrueYield(
-      `${stake.userId}-${stake.stakedAt.getTime()}`,
-      1
-    );
-    totalYield += yield_;
+  for (const stake of Array.from(context.shardVault.stakes.values())) {
+    totalYield += context.shardVault.accrueYield(stake.id, 1);
   }
-
   return totalYield;
 }

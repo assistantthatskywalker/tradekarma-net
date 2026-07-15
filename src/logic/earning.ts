@@ -45,11 +45,9 @@ export function firstReviewBonus(
   transactionLog: TransactionLog,
   productId: string
 ): number {
-  const existingReviews = Array.from(transactionLog.transactions.values()).filter(
-    (tx) =>
-      tx.type === TransactionType.REVIEW &&
-      tx.metadata?.productId === productId
-  );
+  const existingReviews = transactionLog
+    .getByType(TransactionType.REVIEW)
+    .filter((tx) => tx.metadata?.productId === productId);
   return existingReviews.length === 0 ? 3.0 : 1.0;
 }
 

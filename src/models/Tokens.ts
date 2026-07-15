@@ -3,13 +3,14 @@
  * Phase 1: Database representation (not yet on-chain)
  */
 
-export interface KarmaDexBalance {
-  userId: string;
-  balance: number; // KDEX (fixed supply, purchased via DEX in Phase 2)
-  lastUpdated: Date;
-}
+import { Balance, BalanceLedger } from './Ledger';
+
+export type KarmaDexBalance = Balance;
+
+export class KarmaDexLedger extends BalanceLedger {}
 
 export interface KarmaShard {
+  id: string; // Vault key: `${userId}-${stakedAt ms}`
   userId: string;
   amountStaked: number; // KSHRD accrued from staking
   kruneStaked: number; // KRUNE locked
@@ -17,36 +18,6 @@ export interface KarmaShard {
   stakedAt: Date;
   matureAt: Date; // Unlock date (90 days)
   lastYieldAt: Date;
-}
-
-export class KarmaDexLedger {
-  balances: Map<string, KarmaDexBalance> = new Map();
-
-  get(userId: string): number {
-    return this.balances.get(userId)?.balance || 0;
-  }
-
-  set(userId: string, amount: number): void {
-    this.balances.set(userId, {
-      userId,
-      balance: amount,
-      lastUpdated: new Date(),
-    });
-  }
-
-  add(userId: string, amount: number): number {
-    const current = this.get(userId);
-    const newBalance = current + amount;
-    this.set(userId, newBalance);
-    return newBalance;
-  }
-
-  subtract(userId: string, amount: number): boolean {
-    const current = this.get(userId);
-    if (current < amount) return false;
-    this.set(userId, current - amount);
-    return true;
-  }
 }
 
 export class KarmaShardVault {
@@ -62,6 +33,7 @@ export class KarmaShardVault {
     const matureAt = new Date(now.getTime() + lockDays * 24 * 60 * 60 * 1000);
 
     const shard: KarmaShard = {
+      id: `${userId}-${now.getTime()}`,
       userId,
       amountStaked: 0, // Starts at zero, accrues daily
       kruneStaked: kruneAmount,
@@ -71,8 +43,7 @@ export class KarmaShardVault {
       lastYieldAt: now,
     };
 
-    const id = `${userId}-${now.getTime()}`;
-    this.stakes.set(id, shard);
+    this.stakes.set(shard.id, shard);
     return shard;
   }
 
@@ -102,7 +73,7 @@ export class KarmaShardVault {
     return 0;
   }
 
-  redeem(stakeId: string, forUSDC: boolean): number {
+  redeem(stakeId: string): number {
     const stake = this.stakes.get(stakeId);
     if (!stake) return 0;
 
