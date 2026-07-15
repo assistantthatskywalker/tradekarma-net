@@ -17,7 +17,7 @@ import {
   awardReferral,
   awardShipment,
 } from '../logic/earning';
-import { stake, unstake, checkAntiWhalGate, StakingContext } from '../logic/staking';
+import { stake, unstake, checkAntiWhaleGate, StakingContext } from '../logic/staking';
 
 export type AgentCapability =
   | 'read.reputation'
@@ -123,7 +123,7 @@ export class AgentInterface {
           return award(awardShipment(ctx, p.orderId, p.orderValue, p.daysToShip ?? 0));
 
         case 'stake.quote': {
-          const gate = checkAntiWhalGate(this.stakingContext(user));
+          const gate = checkAntiWhaleGate(this.stakingContext(user));
           return { ok: true, data: gate };
         }
 

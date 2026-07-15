@@ -5,7 +5,7 @@
 import { User } from '../models/User';
 import { KarmaRuneLedger } from '../models/KarmaRune';
 import { KarmaDexLedger, KarmaShardVault } from '../models/Tokens';
-import { stake, unstake, checkAntiWhalGate, accrueGlobalYield, StakingContext } from '../logic/staking';
+import { stake, unstake, checkAntiWhaleGate, accrueGlobalYield, StakingContext } from '../logic/staking';
 
 function makeContext(userId: string): StakingContext {
   return {
@@ -18,13 +18,13 @@ function makeContext(userId: string): StakingContext {
 }
 
 describe('Staking & Anti-Whale Gate', () => {
-  describe('checkAntiWhalGate', () => {
+  describe('checkAntiWhaleGate', () => {
     it('BLOCKS a whale: $10M KDEX, 0 KRUNE cannot stake', () => {
       const ctx = makeContext('whale');
       ctx.kdexLedger.set('whale', 10_000_000);
       ctx.kruneLedger.set('whale', 0);
 
-      const gate = checkAntiWhalGate(ctx);
+      const gate = checkAntiWhaleGate(ctx);
       expect(gate.canStake).toBe(false);
       expect(gate.reason).toMatch(/reputation/i);
     });
@@ -34,7 +34,7 @@ describe('Staking & Anti-Whale Gate', () => {
       ctx.kruneLedger.set('power', 50_000);
       ctx.kdexLedger.set('power', 0);
 
-      const gate = checkAntiWhalGate(ctx);
+      const gate = checkAntiWhaleGate(ctx);
       expect(gate.canStake).toBe(false);
       expect(gate.reason).toMatch(/investment|KDEX/i);
     });
@@ -44,7 +44,7 @@ describe('Staking & Anti-Whale Gate', () => {
       ctx.kruneLedger.set('balanced', 500);
       ctx.kdexLedger.set('balanced', 500);
 
-      const gate = checkAntiWhalGate(ctx);
+      const gate = checkAntiWhaleGate(ctx);
       expect(gate.canStake).toBe(true);
     });
   });

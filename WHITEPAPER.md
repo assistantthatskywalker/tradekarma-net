@@ -163,7 +163,7 @@ This is the mechanic everything else is built on, so it gets its own section.
 
 **A whale with $10 million of KDEX and zero earned KRUNE cannot stake, cannot generate KSHRD, and cannot touch the yield.** Full stop. They can buy every KDEX on the open market; it does not matter. Yield requires *both halves*, and the reputation half cannot be bought at any price.
 
-This is enforced twice over. First, the **anti-whale gate** is an explicit check that runs before any stake is opened. In `staking.ts`, `checkAntiWhalGate` returns a hard refusal if the user's KRUNE balance is zero — *"No earned reputation (KRUNE). You must participate first."* — and an equally hard refusal if their KDEX balance is zero — *"No investment tokens (KDEX). You must believe in the project."* On-chain, `Staking.sol` enforces the same rule with two `require` statements at the top of the `stake` function:
+This is enforced twice over. First, the **anti-whale gate** is an explicit check that runs before any stake is opened. In `staking.ts`, `checkAntiWhaleGate` returns a hard refusal if the user's KRUNE balance is zero — *"No earned reputation (KRUNE). You must participate first."* — and an equally hard refusal if their KDEX balance is zero — *"No investment tokens (KDEX). You must believe in the project."* On-chain, `Staking.sol` enforces the same rule with two `require` statements at the top of the `stake` function:
 
 ```solidity
 require(kruneAmount > 0, "STAKE: need earned KRUNE (reputation)");

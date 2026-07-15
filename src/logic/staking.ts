@@ -20,7 +20,7 @@ export interface StakingContext {
  * Anti-Whale Gate: user must have both earned reputation AND purchased investment.
  * This is the load-bearing mechanic: cannot buy your way to yield without proving participation.
  */
-export function checkAntiWhalGate(context: StakingContext): {
+export function checkAntiWhaleGate(context: StakingContext): {
   canStake: boolean;
   reason?: string;
 } {
@@ -59,7 +59,7 @@ export function stake(
   shard?: KarmaShard;
 } {
   // Check gate
-  const gate = checkAntiWhalGate(context);
+  const gate = checkAntiWhaleGate(context);
   if (!gate.canStake) {
     return { success: false, error: gate.reason };
   }
