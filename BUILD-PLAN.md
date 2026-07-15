@@ -204,3 +204,7 @@ Build the core token economy logic, file archive infrastructure, and agent-agnos
 4. **Final Integration:** Sprints 5–6, launch readiness check
 
 **Go/No-Go Decision:** 2026-08-31 (mainnet deployment readiness)
+
+---
+
+**Related project:** `~/ai-workspace/projects/tradekarma-launch/` — a token-free "Level 1 launch/validation site" (evidence-backed trader/educator evaluation thesis) built by a Codex Ringer run on 2026-07-14; moved out of this repo (was untracked `chat-task/`) on 2026-07-15. Alternative positioning, not part of this codebase.
