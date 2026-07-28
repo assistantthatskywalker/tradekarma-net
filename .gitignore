@@ -1,6 +1,7 @@
 node_modules/
 .env
 .env.*
+!.env.example
 .mcp.json
 dist/
 .DS_Store
@@ -8,3 +9,8 @@ dist/
 .codegraph/
 coverage/
 graphify-out/
+
+# foundry build artifacts
+out/
+cache/
+broadcast/

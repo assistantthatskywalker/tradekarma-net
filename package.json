@@ -9,10 +9,12 @@
     "test:coverage": "jest --coverage",
     "build": "tsc",
     "dev": "ts-node src/index.ts",
-    "lint": "eslint src --ext .ts"
+    "lint": "eslint src --ext .ts",
+    "abis": "node scripts/generate-abis.mjs"
   },
   "dependencies": {
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.0",
+    "viem": "^2.55.10"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",

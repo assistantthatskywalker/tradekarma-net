@@ -1,91 +1,60 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+
 /**
  * @title KarmaRune ($KRUNE) — Reputation Token
  * @notice ERC-20 on Base. NON-PURCHASABLE by design: tokens can only be minted
  *         by the platform MINTER (the earning engine) as reputation is earned.
  *         There is deliberately NO public mint / buy function. This is the
  *         load-bearing rule of TradeKarma: reputation is earned, never bought.
+ * @dev Built on OpenZeppelin ERC20 + AccessControl. Minting rights are managed
+ *      with the standard role API (`grantRole` / `revokeRole`), which emits
+ *      RoleGranted / RoleRevoked on every privileged change.
  */
-contract KarmaRune {
-    string public constant name = "KarmaRune";
-    string public constant symbol = "KRUNE";
-    uint8 public constant decimals = 18;
+contract KarmaRune is ERC20, AccessControl {
+    /// @notice Held by the earning engine and the migration bridge only.
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
-    uint256 public totalSupply;
-    mapping(address => uint256) public balanceOf;
-    mapping(address => mapping(address => uint256)) public allowance;
+    /**
+     * @notice Earning events already minted, keyed on `reasonHash`. Each one can
+     *         pay out at most once, forever.
+     * @dev On-chain idempotency, not an off-chain convention: the settlement
+     *      layer retries broadcasts it could not confirm, and a restart can
+     *      replay a backlog. Both paths are safe against this mapping.
+     */
+    mapping(bytes32 => bool) public settled;
 
-    address public owner;
-    mapping(address => bool) public minters; // Only the earning engine / bridge
-
-    event Transfer(address indexed from, address indexed to, uint256 value);
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-    event MinterSet(address indexed minter, bool enabled);
     event Earned(address indexed user, uint256 amount, bytes32 reasonHash);
 
-    modifier onlyOwner() {
-        require(msg.sender == owner, "KRUNE: not owner");
-        _;
-    }
-
-    modifier onlyMinter() {
-        require(minters[msg.sender], "KRUNE: not minter");
-        _;
-    }
-
-    constructor() {
-        owner = msg.sender;
-        minters[msg.sender] = true;
-    }
-
-    function setMinter(address minter, bool enabled) external onlyOwner {
-        minters[minter] = enabled;
-        emit MinterSet(minter, enabled);
+    /**
+     * @param admin holds DEFAULT_ADMIN_ROLE (multi-sig in production) and is
+     *        seeded with MINTER_ROLE so the migration bridge can mint the
+     *        off-chain reputation ledger on day one.
+     */
+    constructor(address admin) ERC20("KarmaRune", "KRUNE") {
+        require(admin != address(0), "KRUNE: zero admin");
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(MINTER_ROLE, admin);
     }
 
     /**
      * @notice Mint KRUNE as reputation earned. Callable ONLY by the earning
-     *         engine / migration bridge. `reasonHash` links to the off-chain
-     *         earning event (review, help, referral, ship) for auditability.
+     *         engine / migration bridge. `reasonHash` identifies the off-chain
+     *         earning event (review, help, referral, ship) and is consumed here:
+     *         one earning event mints once, and a replay reverts.
      * @dev There is no payable path anywhere in this contract — KRUNE cannot
-     *      be purchased.
+     *      be purchased. `_mint` reverts on the zero address. The caller must
+     *      derive `reasonHash` from the event's own identity (its UUID), never
+     *      from the payload, or two distinct events could collide and the second
+     *      would be refused.
      */
-    function mintEarned(address user, uint256 amount, bytes32 reasonHash) external onlyMinter {
-        require(user != address(0), "KRUNE: zero address");
-        totalSupply += amount;
-        balanceOf[user] += amount;
-        emit Transfer(address(0), user, amount);
+    function mintEarned(address user, uint256 amount, bytes32 reasonHash) external onlyRole(MINTER_ROLE) {
+        require(!settled[reasonHash], "KRUNE: already settled");
+        settled[reasonHash] = true;
+        _mint(user, amount);
         emit Earned(user, amount, reasonHash);
-    }
-
-    function transfer(address to, uint256 value) external returns (bool) {
-        _transfer(msg.sender, to, value);
-        return true;
-    }
-
-    function approve(address spender, uint256 value) external returns (bool) {
-        allowance[msg.sender][spender] = value;
-        emit Approval(msg.sender, spender, value);
-        return true;
-    }
-
-    function transferFrom(address from, address to, uint256 value) external returns (bool) {
-        uint256 allowed = allowance[from][msg.sender];
-        require(allowed >= value, "KRUNE: allowance");
-        if (allowed != type(uint256).max) {
-            allowance[from][msg.sender] = allowed - value;
-        }
-        _transfer(from, to, value);
-        return true;
-    }
-
-    function _transfer(address from, address to, uint256 value) internal {
-        require(balanceOf[from] >= value, "KRUNE: balance");
-        require(to != address(0), "KRUNE: zero address");
-        balanceOf[from] -= value;
-        balanceOf[to] += value;
-        emit Transfer(from, to, value);
     }
 }
