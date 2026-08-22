@@ -20,6 +20,12 @@ import {Attacker} from "./mocks/Attacker.sol";
  * token against a harmless probe and asserts the callback fired mid-transfer.
  * Without that pairing, "the attack reverted" would be indistinguishable from
  * "the callback never ran".
+ *
+ * @dev The hostile token is KDEX or USDC, never KRUNE. Staking no longer calls
+ *      `transferFrom` on KRUNE at all — it only reads `balanceOf`, which cannot
+ *      hand control to anyone — so the token that used to be the re-entry point
+ *      has stopped being one. KRUNE is modelled here as a plain MockERC20
+ *      because Staking uses nothing but its balance.
  */
 contract ReentrancyTest is Test {
     address internal constant ADMIN = address(0xA11CE);
@@ -59,91 +65,152 @@ contract ReentrancyTest is Test {
                                  STAKING
     //////////////////////////////////////////////////////////////*/
 
-    function _deployStaking() internal returns (Staking s, ReentrantToken evilKrune, KarmaDex kdex, Attacker atk) {
-        evilKrune = new ReentrantToken("Evil KRUNE", "eKRUNE", 18);
-        kdex = new KarmaDex(KDEX_SUPPLY, DISTRIBUTOR);
-        s = new Staking(address(evilKrune), address(kdex), address(kshrd), OWNER);
+    function _deployStaking()
+        internal
+        returns (Staking s, MockERC20 krune, ReentrantToken evilKdex, MockERC20 usdc, Attacker atk)
+    {
+        krune = new MockERC20("KarmaRune", "KRUNE", 18);
+        evilKdex = new ReentrantToken("Evil KDEX", "eKDEX", 18);
+        usdc = new MockERC20("USD Coin", "USDC", 6);
+        Treasury t = new Treasury(address(usdc), address(evilKdex), address(kshrd), OWNER);
+        s = new Staking(address(krune), address(evilKdex), address(kshrd), address(t), OWNER);
 
         vm.prank(ADMIN);
         kshrd.grantRole(MINTER_ROLE, address(s));
 
         atk = new Attacker(address(s));
-        evilKrune.mint(address(atk), 1_000e18);
-        vm.prank(DISTRIBUTOR);
-        assertTrue(kdex.transfer(address(atk), 1_000e18));
+        krune.mint(address(atk), 1_000e18);
+        evilKdex.mint(address(atk), 1_000e18);
+        usdc.mint(address(atk), 1_000e6);
 
-        atk.approve(address(evilKrune), address(s), type(uint256).max);
-        atk.approve(address(kdex), address(s), type(uint256).max);
+        atk.approve(address(evilKdex), address(s), type(uint256).max);
+        atk.approve(address(usdc), address(s), type(uint256).max);
     }
 
     function test_control_callbackFiresInsideStake() public {
-        (Staking s, ReentrantToken evilKrune,, Attacker atk) = _deployStaking();
+        (Staking s,, ReentrantToken evilKdex,, Attacker atk) = _deployStaking();
 
-        evilKrune.arm(address(probe), abi.encodeCall(ReentrancyProbe.ping, ()));
+        evilKdex.arm(address(probe), abi.encodeCall(ReentrancyProbe.ping, ()));
         atk.exec(abi.encodeCall(Staking.stake, (10e18, 10e18)));
 
         assertEq(probe.pings(), 1, "re-entry point inside stake() is reachable");
-        (,,,,, bool active) = s.positions(address(atk));
+        (,,,,,, bool active) = s.positions(address(atk));
         assertTrue(active);
     }
 
     function test_stake_reentryIsBlocked() public {
-        (Staking s, ReentrantToken evilKrune,, Attacker atk) = _deployStaking();
+        (Staking s,, ReentrantToken evilKdex,, Attacker atk) = _deployStaking();
 
         bytes memory reenter = abi.encodeCall(Attacker.exec, (abi.encodeCall(Staking.stake, (1e18, 1e18))));
-        evilKrune.arm(address(atk), reenter);
+        evilKdex.arm(address(atk), reenter);
 
         vm.expectRevert(ReentrancyGuard.ReentrancyGuardReentrantCall.selector);
         atk.exec(abi.encodeCall(Staking.stake, (10e18, 10e18)));
 
-        (,,,,, bool active) = s.positions(address(atk));
+        (,,,,,, bool active) = s.positions(address(atk));
         assertFalse(active, "nothing was staked");
-        assertEq(evilKrune.balanceOf(address(s)), 0);
+        assertEq(evilKdex.balanceOf(address(s)), 0);
+        assertEq(s.totalWeight(), 0, "and no weight leaked into the pool");
     }
 
     function test_control_callbackFiresInsideUnstake() public {
-        (, ReentrantToken evilKrune,, Attacker atk) = _deployStaking();
+        (,, ReentrantToken evilKdex,, Attacker atk) = _deployStaking();
         atk.exec(abi.encodeCall(Staking.stake, (10e18, 10e18)));
         vm.warp(block.timestamp + 90 days);
 
-        evilKrune.arm(address(probe), abi.encodeCall(ReentrancyProbe.ping, ()));
+        evilKdex.arm(address(probe), abi.encodeCall(ReentrancyProbe.ping, ()));
         atk.exec(abi.encodeCall(Staking.unstake, ()));
 
         assertEq(probe.pings(), 1, "re-entry point inside unstake() is reachable");
-        assertEq(evilKrune.balanceOf(address(atk)), 1_000e18);
+        assertEq(evilKdex.balanceOf(address(atk)), 1_000e18);
     }
 
     /// @notice The double-drain: re-enter unstake() while the principal transfer
     ///         is still in flight, as the SAME staker.
     function test_unstake_reentryIsBlocked() public {
-        (Staking s, ReentrantToken evilKrune,, Attacker atk) = _deployStaking();
+        (Staking s,, ReentrantToken evilKdex,, Attacker atk) = _deployStaking();
         atk.exec(abi.encodeCall(Staking.stake, (10e18, 10e18)));
         vm.warp(block.timestamp + 90 days);
 
         bytes memory reenter = abi.encodeCall(Attacker.exec, (abi.encodeCall(Staking.unstake, ())));
-        evilKrune.arm(address(atk), reenter);
+        evilKdex.arm(address(atk), reenter);
 
         // Must be the guard, NOT "STAKE: none" - the guard has to be what stops it.
         vm.expectRevert(ReentrancyGuard.ReentrancyGuardReentrantCall.selector);
         atk.exec(abi.encodeCall(Staking.unstake, ()));
 
-        (,,,,, bool active) = s.positions(address(atk));
+        (,,,,,, bool active) = s.positions(address(atk));
         assertTrue(active, "position survives the failed attack");
-        assertEq(evilKrune.balanceOf(address(s)), 10e18, "principal still in the contract");
+        assertEq(evilKdex.balanceOf(address(s)), 10e18, "principal still in the contract");
         assertEq(kshrd.totalSupply(), 0, "no KSHRD was minted twice");
     }
 
     /// @notice Re-entering stake() from inside unstake() is blocked too.
     function test_crossFunctionReentryIsBlocked() public {
-        (,ReentrantToken evilKrune,, Attacker atk) = _deployStaking();
+        (,, ReentrantToken evilKdex,, Attacker atk) = _deployStaking();
         atk.exec(abi.encodeCall(Staking.stake, (10e18, 10e18)));
         vm.warp(block.timestamp + 90 days);
 
         bytes memory reenter = abi.encodeCall(Attacker.exec, (abi.encodeCall(Staking.stake, (1e18, 1e18))));
-        evilKrune.arm(address(atk), reenter);
+        evilKdex.arm(address(atk), reenter);
 
         vm.expectRevert(ReentrancyGuard.ReentrancyGuardReentrantCall.selector);
         atk.exec(abi.encodeCall(Staking.unstake, ()));
+    }
+
+    /*//////////////////////////////////////////////////////////////
+        DEPOSIT FEES — THE ACCUMULATOR MUST NOT BE RE-ENTERED
+    //////////////////////////////////////////////////////////////*/
+
+    function _deployStakingWithEvilUsdc()
+        internal
+        returns (Staking s, ReentrantToken evilUsdc, MockERC20 kdex, Attacker atk)
+    {
+        MockERC20 krune = new MockERC20("KarmaRune", "KRUNE", 18);
+        kdex = new MockERC20("KarmaDex", "KDEX", 18);
+        evilUsdc = new ReentrantToken("Evil USDC", "eUSDC", 6);
+        Treasury t = new Treasury(address(evilUsdc), address(kdex), address(kshrd), OWNER);
+        s = new Staking(address(krune), address(kdex), address(kshrd), address(t), OWNER);
+
+        vm.prank(ADMIN);
+        kshrd.grantRole(MINTER_ROLE, address(s));
+
+        atk = new Attacker(address(s));
+        krune.mint(address(atk), 1_000e18);
+        kdex.mint(address(atk), 1_000e18);
+        evilUsdc.mint(address(atk), 1_000e6);
+        atk.approve(address(kdex), address(s), type(uint256).max);
+        atk.approve(address(evilUsdc), address(s), type(uint256).max);
+    }
+
+    function test_control_callbackFiresInsideDepositFees() public {
+        (Staking s, ReentrantToken evilUsdc,, Attacker atk) = _deployStakingWithEvilUsdc();
+        atk.exec(abi.encodeCall(Staking.stake, (10e18, 10e18)));
+
+        evilUsdc.arm(address(probe), abi.encodeCall(ReentrancyProbe.ping, ()));
+        atk.exec(abi.encodeCall(Staking.depositFees, (100e6)));
+
+        assertEq(probe.pings(), 1, "re-entry point inside depositFees() is reachable");
+        assertGt(s.rewardPerWeightStored(), 0, "and the deposit still landed");
+    }
+
+    /// @notice Re-entering `unstake` from inside `depositFees` would settle a
+    ///         position against an accumulator that is mid-update. The guard
+    ///         covers both functions, so it cannot start.
+    function test_depositFees_reentryIntoUnstakeIsBlocked() public {
+        (Staking s, ReentrantToken evilUsdc, MockERC20 kdex, Attacker atk) = _deployStakingWithEvilUsdc();
+        atk.exec(abi.encodeCall(Staking.stake, (10e18, 10e18)));
+        vm.warp(block.timestamp + 90 days);
+
+        bytes memory reenter = abi.encodeCall(Attacker.exec, (abi.encodeCall(Staking.unstake, ())));
+        evilUsdc.arm(address(atk), reenter);
+
+        vm.expectRevert(ReentrancyGuard.ReentrancyGuardReentrantCall.selector);
+        atk.exec(abi.encodeCall(Staking.depositFees, (100e6)));
+
+        assertEq(evilUsdc.balanceOf(address(atk)), 1_000e6, "the deposit rolled back too");
+        assertEq(s.rewardPerWeightStored(), 0);
+        assertEq(kdex.balanceOf(address(s)), 10e18, "and the position is untouched");
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -207,6 +274,8 @@ contract ReentrancyTest is Test {
         kshrd.grantRole(BURNER_ROLE, address(t));
         kshrd.grantRole(MINTER_ROLE, address(this));
         vm.stopPrank();
+        vm.prank(OWNER);
+        t.setKshrdPerKdexRate(1e18);
 
         Attacker atk = new Attacker(address(t));
         evilKdex.mint(address(t), 1_000_000e18);
@@ -224,22 +293,6 @@ contract ReentrancyTest is Test {
         assertEq(evilKdex.balanceOf(address(atk)), 0);
     }
 
-    function test_depositFees_reentryIntoRedeemIsBlocked() public {
-        (Treasury t, ReentrantToken evilUsdc,, Attacker atk) = _deployTreasuryWithEvilUsdc();
-
-        evilUsdc.mint(address(atk), 1_000e6);
-        atk.approve(address(evilUsdc), address(t), type(uint256).max);
-
-        bytes memory reenter = abi.encodeCall(Attacker.exec, (abi.encodeCall(Treasury.redeem, (10e18, true))));
-        evilUsdc.arm(address(atk), reenter);
-
-        vm.expectRevert(ReentrancyGuard.ReentrancyGuardReentrantCall.selector);
-        atk.exec(abi.encodeCall(Treasury.depositFees, (100e6)));
-
-        assertEq(kshrd.balanceOf(address(atk)), 100e18);
-        assertEq(evilUsdc.balanceOf(address(atk)), 1_000e6, "deposit rolled back too");
-    }
-
     /*//////////////////////////////////////////////////////////////
                         GUARD RELEASES AFTER THE CALL
     //////////////////////////////////////////////////////////////*/
@@ -247,15 +300,16 @@ contract ReentrancyTest is Test {
     /// @notice A guard that never releases would brick the contract. Prove the
     ///         same actor can call again in a later transaction.
     function test_guardIsNotSticky() public {
-        (Staking s, ReentrantToken evilKrune,, Attacker atk) = _deployStaking();
+        (Staking s, MockERC20 krune, ReentrantToken evilKdex,, Attacker atk) = _deployStaking();
 
         atk.exec(abi.encodeCall(Staking.stake, (10e18, 10e18)));
         atk.exec(abi.encodeCall(Staking.stake, (10e18, 10e18)));
         vm.warp(block.timestamp + 90 days);
         atk.exec(abi.encodeCall(Staking.unstake, ()));
 
-        assertEq(evilKrune.balanceOf(address(atk)), 1_000e18);
-        (,,,,, bool active) = s.positions(address(atk));
+        assertEq(evilKdex.balanceOf(address(atk)), 1_000e18);
+        assertEq(krune.balanceOf(address(atk)), 1_000e18, "the reference never moved a rune");
+        (,,,,,, bool active) = s.positions(address(atk));
         assertFalse(active);
     }
 }

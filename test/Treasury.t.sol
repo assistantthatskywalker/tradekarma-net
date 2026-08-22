@@ -33,7 +33,7 @@ contract TreasuryTest is Test {
     uint256 internal constant KDEX_FLOAT = 1_000_000e18;
 
     event Redeemed(address indexed user, uint256 kshrd, bool asUsdc, uint256 paid);
-    event FeeDeposited(address indexed from, uint256 usdcAmount);
+    event KeepbackRateSet(uint256 oldRate, uint256 newRate);
     event TokenRecovered(address indexed token, address indexed to, uint256 amount);
     event Transfer(address indexed from, address indexed to, uint256 value);
 
@@ -72,7 +72,9 @@ contract TreasuryTest is Test {
         assertEq(address(treasury.kshrd()), address(kshrd));
         assertEq(treasury.owner(), OWNER);
         assertEq(treasury.usdcScale(), 1e12, "10 ** (18 - 6)");
+        assertEq(treasury.SCALE(), 1e18);
         assertEq(treasury.KDEX_KEEPBACK_BONUS_BPS(), 1000);
+        assertEq(treasury.kshrdPerKdexRate(), 0, "the KDEX branch ships DISABLED");
     }
 
     function test_constructor_revertsOnZeroTokens() public {
@@ -97,31 +99,58 @@ contract TreasuryTest is Test {
         assertEq(t.usdcScale(), 10 ** (18 - uint256(dec)));
     }
 
-    /*//////////////////////////////////////////////////////////////
-                               DEPOSIT FEES
-    //////////////////////////////////////////////////////////////*/
-
-    function test_depositFees_movesUsdcAndEmits() public {
-        usdc.mint(STRANGER, 500e6);
-        vm.startPrank(STRANGER);
-        usdc.approve(address(treasury), 500e6);
-
-        vm.expectEmit(true, false, false, true, address(treasury));
-        emit FeeDeposited(STRANGER, 500e6);
-        treasury.depositFees(500e6);
-        vm.stopPrank();
-
-        assertEq(usdc.balanceOf(address(treasury)), USDC_FLOAT + 500e6);
-        assertEq(usdc.balanceOf(STRANGER), 0);
+    /**
+     * @notice Fees are deposited through `Staking.depositFees`, which credits
+     *         them to stakers in the same transaction. There is deliberately no
+     *         way to add USDC here without that accounting running — that split
+     *         is exactly what let v1's balance and its promises drift apart.
+     */
+    function test_thereIsNoUnaccountedDepositPath() public {
+        (bool ok,) = address(treasury).call(abi.encodeWithSignature("depositFees(uint256)", 1e6));
+        assertFalse(ok, "Treasury must not accept fees behind the pool's back");
     }
 
-    function test_depositFees_revertsWithoutAllowance() public {
-        usdc.mint(STRANGER, 1e6);
-        vm.expectRevert(
-            abi.encodeWithSelector(IERC20Errors.ERC20InsufficientAllowance.selector, address(treasury), 0, 1e6)
-        );
-        vm.prank(STRANGER);
-        treasury.depositFees(1e6);
+    /*//////////////////////////////////////////////////////////////
+                       SOLVENCY, READABLE ON-CHAIN
+    //////////////////////////////////////////////////////////////*/
+
+    function test_accounting_readsWithNothingOutstanding() public view {
+        assertEq(treasury.totalKshrdOutstanding(), 0);
+        assertEq(treasury.totalOutstandingLiability(), 0);
+        assertEq(treasury.collateralRatio(), type(uint256).max, "no debt has no finite ratio");
+    }
+
+    function test_accounting_liabilityAndRatioTrackTheShardSupply() public {
+        _giveShards(USER, 500_000e18); // $500,000 of claims against $1,000,000
+
+        assertEq(treasury.totalKshrdOutstanding(), 500_000e18);
+        assertEq(treasury.totalOutstandingLiability(), 500_000e6, "18-dec claims read as USDC base units");
+        assertEq(treasury.collateralRatio(), 2e18, "1,000,000 / 500,000 = 2.0");
+
+        vm.prank(USER);
+        treasury.redeem(500_000e18, true);
+
+        assertEq(treasury.totalOutstandingLiability(), 0);
+        assertEq(usdc.balanceOf(address(treasury)), USDC_FLOAT - 500_000e6);
+    }
+
+    /// @notice Redemption moves both sides of the ratio by the same dollar, so a
+    ///         solvent treasury cannot be made insolvent by paying out.
+    function test_accounting_ratioSurvivesRedemption() public {
+        _giveShards(USER, USDC_FLOAT * 1e12); // exactly collateralised
+        assertEq(treasury.collateralRatio(), 1e18);
+
+        vm.prank(USER);
+        treasury.redeem(400_000e18, true);
+        assertEq(treasury.collateralRatio(), 1e18, "still exactly one");
+    }
+
+    /// @notice Sub-unit KSHRD buys nothing, so it is not counted as debt.
+    function test_accounting_subUnitDustIsNotALiability() public {
+        _giveShards(USER, 1e12 - 1);
+        assertEq(treasury.totalKshrdOutstanding(), 1e12 - 1);
+        assertEq(treasury.totalOutstandingLiability(), 0, "dust cannot be redeemed, so it is not owed");
+        assertEq(treasury.collateralRatio(), type(uint256).max);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -236,38 +265,108 @@ contract TreasuryTest is Test {
     }
 
     /*//////////////////////////////////////////////////////////////
-                              REDEEM — KDEX
+        REDEEM — KDEX KEEPBACK, DISABLED BY DEFAULT
     //////////////////////////////////////////////////////////////*/
 
-    function test_redeem_asKdexPaysTenPercentBonus() public {
+    /**
+     * @notice REGRESSION (was HIGH, economics): the keepback paid a flat
+     *         1.1 KDEX per KSHRD with no price anywhere in the system — a 450%
+     *         overpayment at $5/KDEX, and a loss at every price above $0.909.
+     *         There is no KDEX market yet, so there is no honest rate to
+     *         hardcode; the branch is off until the owner supplies one.
+     */
+    function test_redeem_asKdexIsDisabledUntilARateIsSet() public {
+        _giveShards(USER, 100e18);
+        assertEq(treasury.kshrdPerKdexRate(), 0);
+
+        vm.expectRevert("TREAS: KDEX redemption disabled");
+        vm.prank(USER);
+        treasury.redeem(100e18, false);
+
+        assertEq(kshrd.balanceOf(USER), 100e18, "nothing burned while the branch is shut");
+        assertEq(kdex.balanceOf(USER), 0);
+        assertEq(kdex.balanceOf(address(treasury)), KDEX_FLOAT);
+
+        // The USDC path is unaffected by the shutter.
+        vm.prank(USER);
+        assertEq(treasury.redeem(100e18, true), 100e6);
+    }
+
+    function test_setKshrdPerKdexRate_opensAndClosesTheBranch() public {
         _giveShards(USER, 100e18);
 
+        vm.expectEmit(false, false, false, true, address(treasury));
+        emit KeepbackRateSet(0, 1e18);
+        vm.prank(OWNER);
+        treasury.setKshrdPerKdexRate(1e18);
+        assertEq(treasury.kshrdPerKdexRate(), 1e18);
+
+        vm.prank(USER);
+        assertEq(treasury.redeem(50e18, false), 55e18, "1 KDEX = $1, +10% keepback");
+
+        // ...and it can be shut again.
+        vm.expectEmit(false, false, false, true, address(treasury));
+        emit KeepbackRateSet(1e18, 0);
+        vm.prank(OWNER);
+        treasury.setKshrdPerKdexRate(0);
+
+        vm.expectRevert("TREAS: KDEX redemption disabled");
+        vm.prank(USER);
+        treasury.redeem(50e18, false);
+    }
+
+    function test_setKshrdPerKdexRate_revertsForNonOwner() public {
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, STRANGER));
+        vm.prank(STRANGER);
+        treasury.setKshrdPerKdexRate(1e18);
+        assertEq(treasury.kshrdPerKdexRate(), 0);
+    }
+
+    /// @notice The rate is a real price: a dearer KDEX buys fewer of them.
+    function test_redeem_asKdexPricesTheBranch() public {
+        vm.prank(OWNER);
+        treasury.setKshrdPerKdexRate(5e18); // $5 per KDEX
+        _giveShards(USER, 100e18);
+
+        // 100 KSHRD / $5 = 20 KDEX, +10% = 22 KDEX.
         vm.expectEmit(true, false, false, true, address(treasury));
-        emit Redeemed(USER, 100e18, false, 110e18);
+        emit Redeemed(USER, 100e18, false, 22e18);
         vm.prank(USER);
         uint256 paid = treasury.redeem(100e18, false);
 
-        assertEq(paid, 110e18, "+10% keepback bonus");
-        assertEq(kdex.balanceOf(USER), 110e18);
-        assertEq(kdex.balanceOf(address(treasury)), KDEX_FLOAT - 110e18);
+        assertEq(paid, 22e18);
+        assertEq(kdex.balanceOf(USER), 22e18);
+        assertEq(kdex.balanceOf(address(treasury)), KDEX_FLOAT - 22e18);
         assertEq(kshrd.balanceOf(USER), 0, "the full amount is burned - no dust in the KDEX path");
         assertEq(usdc.balanceOf(address(treasury)), USDC_FLOAT, "USDC untouched");
     }
 
-    function test_redeem_asKdexHasNoDustFloor() public {
-        _giveShards(USER, 1);
+    /// @notice A payout that rounds to zero must not burn anything.
+    function test_redeem_asKdexRevertsBelowOneKdexUnit() public {
+        vm.prank(OWNER);
+        treasury.setKshrdPerKdexRate(2e18);
+        _giveShards(USER, 1); // 1 wei / 2 -> 0
+
+        vm.expectRevert("TREAS: below one KDEX unit");
         vm.prank(USER);
-        uint256 paid = treasury.redeem(1, false);
-        assertEq(paid, 1, "1 wei KSHRD -> 1 wei KDEX (bonus truncates to 0)");
-        assertEq(kshrd.balanceOf(USER), 0);
+        treasury.redeem(1, false);
+        assertEq(kshrd.balanceOf(USER), 1);
     }
 
-    function testFuzz_kdexRedemptionAlwaysPaysAmountPlusTenPercent(uint256 amount) public {
-        amount = bound(amount, 1, 100_000e18);
+    function testFuzz_kdexRedemptionPricesAtTheRatePlusTenPercent(uint256 amount, uint256 rate) public {
+        amount = bound(amount, 1e18, 100_000e18);
+        rate = bound(rate, 1e15, 1_000e18); // $0.001 .. $1,000 per KDEX
+        vm.prank(OWNER);
+        treasury.setKshrdPerKdexRate(rate);
+
+        uint256 base = (amount * 1e18) / rate;
+        vm.assume(base + base / 10 <= KDEX_FLOAT);
+
         _giveShards(USER, amount);
         vm.prank(USER);
         uint256 paid = treasury.redeem(amount, false);
-        assertEq(paid, amount + amount / 10);
+
+        assertEq(paid, base + base / 10);
         assertEq(kshrd.balanceOf(USER), 0);
     }
 
@@ -297,6 +396,8 @@ contract TreasuryTest is Test {
     }
 
     function test_redeem_revertsOnInsufficientTreasuryKdex() public {
+        vm.prank(OWNER);
+        treasury.setKshrdPerKdexRate(1e18);
         uint256 tooMuch = KDEX_FLOAT; // +10% pushes past the float
         _giveShards(USER, tooMuch);
 
@@ -334,6 +435,8 @@ contract TreasuryTest is Test {
      *         burn their shards, on either payout path.
      */
     function test_redeem_revertsWithoutApproval() public {
+        vm.prank(OWNER);
+        treasury.setKshrdPerKdexRate(1e18); // so the KDEX leg fails on consent, not on the shutter
         kshrd.mint(USER, 5e18); // deliberately NOT via _giveShards - no approval
 
         vm.expectRevert(
@@ -482,11 +585,15 @@ contract TreasuryTest is Test {
     }
 
     /**
-     * @notice FINDING (INFO): the two redemption paths fail differently on an
-     *         absurd amount. USDC gives a clean require string; KDEX panics on
-     *         `kshrdAmount * 1000` before any check can run.
+     * @notice FINDING (INFO): the two redemption paths still fail differently on
+     *         an absurd amount. USDC gives a clean require string; the KDEX leg
+     *         panics inside the price conversion before any check can run.
+     *         Recorded rather than fixed — the input is unreachable with a real
+     *         balance and a guard would only add an untestable branch.
      */
     function test_FINDING_kdexPathPanicsOnAbsurdAmountWhileUsdcPathRevertsCleanly() public {
+        vm.prank(OWNER);
+        treasury.setKshrdPerKdexRate(1e18);
         _giveShards(USER, 1e18);
 
         vm.expectRevert("TREAS: insufficient USDC");

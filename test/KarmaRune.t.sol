@@ -6,6 +6,7 @@ import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol"
 import {IERC20Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {KarmaRune} from "../contracts/KarmaRune.sol";
+import {KarmaRuneHarness} from "./harness/KarmaRuneHarness.sol";
 
 contract KarmaRuneTest is Test {
     KarmaRune internal krune;
@@ -289,10 +290,13 @@ contract KarmaRuneTest is Test {
     /**
      * @notice Enumerates KRUNE's ENTIRE external ABI (verified against
      *         `forge inspect KarmaRune abi` — 19 functions, no more) and proves
-     *         every single entry point rejects ETH. Each function is called
-     *         twice: once with value 0 where it MUST succeed, once with value
-     *         1 wei where it MUST revert. The paired call is what makes this
-     *         non-vacuous: the only variable is the attached ETH.
+     *         every single entry point rejects ETH. The 16 functions that are
+     *         supposed to work are called twice: once with value 0 where they
+     *         MUST succeed, once with 1 wei where they MUST revert. The paired
+     *         call is what makes this non-vacuous — the only variable is the
+     *         attached ETH. The remaining three are the soulbound trio, which
+     *         must revert either way; they are checked separately below so that
+     *         "reverted" here can never be mistaken for "rejected the ETH".
      */
     function test_noFunctionInTheAbiAcceptsEth() public {
         KarmaRune k = new KarmaRune(address(this));
@@ -300,26 +304,23 @@ contract KarmaRuneTest is Test {
 
         bytes32 minter = k.MINTER_ROLE();
 
-        bytes[] memory calls = new bytes[](19);
+        bytes[] memory calls = new bytes[](16);
         calls[0] = abi.encodeWithSignature("DEFAULT_ADMIN_ROLE()");
         calls[1] = abi.encodeWithSignature("MINTER_ROLE()");
         calls[2] = abi.encodeWithSignature("allowance(address,address)", address(this), USER);
-        calls[3] = abi.encodeWithSignature("approve(address,uint256)", USER, 1);
-        calls[4] = abi.encodeWithSignature("balanceOf(address)", address(this));
-        calls[5] = abi.encodeWithSignature("decimals()");
-        calls[6] = abi.encodeWithSignature("getRoleAdmin(bytes32)", minter);
-        calls[7] = abi.encodeWithSignature("grantRole(bytes32,address)", minter, MINTER);
-        calls[8] = abi.encodeWithSignature("hasRole(bytes32,address)", minter, address(this));
-        calls[9] = abi.encodeWithSignature("mintEarned(address,uint256,bytes32)", address(this), 1e18, REASON);
-        calls[10] = abi.encodeWithSignature("name()");
-        calls[11] = abi.encodeWithSignature("renounceRole(bytes32,address)", minter, address(this));
-        calls[12] = abi.encodeWithSignature("revokeRole(bytes32,address)", minter, MINTER);
-        calls[13] = abi.encodeWithSignature("settled(bytes32)", REASON);
-        calls[14] = abi.encodeWithSignature("supportsInterface(bytes4)", bytes4(0x01ffc9a7));
-        calls[15] = abi.encodeWithSignature("symbol()");
-        calls[16] = abi.encodeWithSignature("totalSupply()");
-        calls[17] = abi.encodeWithSignature("transfer(address,uint256)", USER, 0);
-        calls[18] = abi.encodeWithSignature("transferFrom(address,address,uint256)", address(this), USER, 0);
+        calls[3] = abi.encodeWithSignature("balanceOf(address)", address(this));
+        calls[4] = abi.encodeWithSignature("decimals()");
+        calls[5] = abi.encodeWithSignature("getRoleAdmin(bytes32)", minter);
+        calls[6] = abi.encodeWithSignature("grantRole(bytes32,address)", minter, MINTER);
+        calls[7] = abi.encodeWithSignature("hasRole(bytes32,address)", minter, address(this));
+        calls[8] = abi.encodeWithSignature("mintEarned(address,uint256,bytes32)", address(this), 1e18, REASON);
+        calls[9] = abi.encodeWithSignature("name()");
+        calls[10] = abi.encodeWithSignature("renounceRole(bytes32,address)", minter, address(this));
+        calls[11] = abi.encodeWithSignature("revokeRole(bytes32,address)", minter, MINTER);
+        calls[12] = abi.encodeWithSignature("settled(bytes32)", REASON);
+        calls[13] = abi.encodeWithSignature("supportsInterface(bytes4)", bytes4(0x01ffc9a7));
+        calls[14] = abi.encodeWithSignature("symbol()");
+        calls[15] = abi.encodeWithSignature("totalSupply()");
 
         for (uint256 i = 0; i < calls.length; i++) {
             (bool paidOk,) = address(k).call{value: 1 wei}(calls[i]);
@@ -331,6 +332,27 @@ contract KarmaRuneTest is Test {
             (bool freeOk,) = address(k).call(calls[i]);
             assertTrue(freeOk, "control call without ETH should succeed");
         }
+
+        bytes[] memory soulbound = new bytes[](3);
+        soulbound[0] = abi.encodeWithSignature("approve(address,uint256)", USER, 1);
+        soulbound[1] = abi.encodeWithSignature("transfer(address,uint256)", USER, 0);
+        soulbound[2] = abi.encodeWithSignature("transferFrom(address,address,uint256)", address(this), USER, 0);
+        for (uint256 i = 0; i < soulbound.length; i++) {
+            (bool paidOk,) = address(k).call{value: 1 wei}(soulbound[i]);
+            assertFalse(paidOk);
+            (bool freeOk, bytes memory ret) = address(k).call(soulbound[i]);
+            assertFalse(freeOk, "the soulbound trio must revert with or without ETH");
+            assertEq(_revertReason(ret), "KRUNE: soulbound");
+        }
+    }
+
+    /// @dev Strips the `Error(string)` selector and ABI wrapper off revert data.
+    function _revertReason(bytes memory ret) internal pure returns (string memory) {
+        bytes memory payload = new bytes(ret.length - 4);
+        for (uint256 i = 4; i < ret.length; i++) {
+            payload[i - 4] = ret[i];
+        }
+        return abi.decode(payload, (string));
     }
 
     function test_plainEthTransferReverts_noReceiveNoFallback() public {
@@ -365,29 +387,151 @@ contract KarmaRuneTest is Test {
     }
 
     /*//////////////////////////////////////////////////////////////
-                              ERC20 BEHAVIOUR
+        SOULBOUND — REPUTATION CANNOT BE BOUGHT AT ANY PRICE
     //////////////////////////////////////////////////////////////*/
 
-    function test_transferAndTransferFrom() public {
+    /**
+     * @notice REGRESSION (was HIGH, design invariant): KRUNE was a plain
+     *         transferable ERC-20, so the whitepaper's "cannot be bought at any
+     *         price" was enforced at mint and nowhere else — a whale bought
+     *         earned reputation OTC in a single `transfer`, and the geometric
+     *         mean put a computable dollar price on it (~$3/KRUNE of NPV).
+     *         Every holder-to-holder path now reverts.
+     */
+    function test_transfer_revertsForEveryHolder() public {
         vm.prank(ADMIN);
         krune.mintEarned(USER, 10e18, REASON);
 
-        vm.prank(USER);
-        assertTrue(krune.transfer(STRANGER, 4e18));
-        assertEq(krune.balanceOf(USER), 6e18);
-        assertEq(krune.balanceOf(STRANGER), 4e18);
+        vm.startPrank(USER);
+        vm.expectRevert("KRUNE: soulbound");
+        // forge-lint: disable-next-line(erc20-unchecked-transfer)
+        krune.transfer(STRANGER, 4e18);
 
-        vm.prank(USER);
-        krune.approve(address(this), 6e18);
-        assertTrue(krune.transferFrom(USER, STRANGER, 6e18));
-        assertEq(krune.balanceOf(USER), 0);
-        assertEq(krune.balanceOf(STRANGER), 10e18);
+        // Not a balance check and not an amount check: zero moves too, and so
+        // does a transfer to oneself.
+        vm.expectRevert("KRUNE: soulbound");
+        // forge-lint: disable-next-line(erc20-unchecked-transfer)
+        krune.transfer(STRANGER, 0);
+        vm.expectRevert("KRUNE: soulbound");
+        // forge-lint: disable-next-line(erc20-unchecked-transfer)
+        krune.transfer(USER, 1);
+        vm.expectRevert("KRUNE: soulbound");
+        // forge-lint: disable-next-line(erc20-unchecked-transfer)
+        krune.transfer(address(0), 1);
+        vm.stopPrank();
+
+        // Nor is an empty wallet a special case.
+        vm.expectRevert("KRUNE: soulbound");
+        vm.prank(STRANGER);
+        // forge-lint: disable-next-line(erc20-unchecked-transfer)
+        krune.transfer(USER, 1);
+
+        assertEq(krune.balanceOf(USER), 10e18, "not one wei moved");
+        assertEq(krune.balanceOf(STRANGER), 0);
     }
 
-    function test_transfer_revertsOnInsufficientBalance() public {
-        vm.expectRevert(abi.encodeWithSelector(IERC20Errors.ERC20InsufficientBalance.selector, USER, 0, 1));
+    function test_transferFrom_reverts() public {
+        vm.prank(ADMIN);
+        krune.mintEarned(USER, 10e18, REASON);
+
+        vm.expectRevert("KRUNE: soulbound");
+        // forge-lint: disable-next-line(erc20-unchecked-transfer)
+        krune.transferFrom(USER, STRANGER, 1e18);
+
+        vm.expectRevert("KRUNE: soulbound");
         vm.prank(USER);
         // forge-lint: disable-next-line(erc20-unchecked-transfer)
-        krune.transfer(STRANGER, 1);
+        krune.transferFrom(USER, STRANGER, 1e18);
+
+        assertEq(krune.balanceOf(USER), 10e18);
+    }
+
+    /// @notice `approve` reverts rather than succeeding into an allowance that
+    ///         could never be spent — an integrator must fail loudly, at the
+    ///         approval, not silently at the transfer.
+    function test_approve_revertsAndAllowanceStaysZero() public {
+        vm.prank(ADMIN);
+        krune.mintEarned(USER, 10e18, REASON);
+
+        vm.startPrank(USER);
+        vm.expectRevert("KRUNE: soulbound");
+        krune.approve(STRANGER, 10e18);
+        vm.expectRevert("KRUNE: soulbound");
+        krune.approve(STRANGER, 0);
+        vm.expectRevert("KRUNE: soulbound");
+        krune.approve(STRANGER, type(uint256).max);
+        vm.stopPrank();
+
+        assertEq(krune.allowance(USER, STRANGER), 0, "no standing claim on anyone's reputation can exist");
+    }
+
+    /**
+     * @notice The rule lives in `_update`, not merely in the three public
+     *         overrides. Reached directly through a harness, because nothing in
+     *         the shipped ABI can get here — which is the point: the guard is
+     *         underneath the surface, not on it.
+     */
+    function test_updateHookItselfRefusesHolderToHolderMovement() public {
+        KarmaRuneHarness h = new KarmaRuneHarness(ADMIN);
+        vm.prank(ADMIN);
+        h.mintEarned(USER, 10e18, REASON);
+
+        vm.expectRevert("KRUNE: soulbound");
+        h.internalUpdate(USER, STRANGER, 1e18);
+
+        vm.expectRevert("KRUNE: soulbound");
+        h.internalUpdate(USER, STRANGER, 0);
+
+        // Minting (from == 0) is the one direction that stays open.
+        h.internalUpdate(address(0), STRANGER, 5e18);
+        assertEq(h.balanceOf(STRANGER), 5e18);
+        assertEq(h.balanceOf(USER), 10e18);
+    }
+
+    /// @notice Generalised: no caller, no counterparty and no amount moves KRUNE.
+    function testFuzz_noTransferPathMovesKrune(address from, address to, uint256 amount) public {
+        vm.assume(from != address(0) && to != address(0) && from != address(krune));
+        amount = bound(amount, 0, 1e30);
+
+        vm.prank(ADMIN);
+        krune.mintEarned(from, 1e30, REASON);
+        uint256 before = krune.balanceOf(to);
+
+        vm.startPrank(from);
+        vm.expectRevert("KRUNE: soulbound");
+        // forge-lint: disable-next-line(erc20-unchecked-transfer)
+        krune.transfer(to, amount);
+        vm.expectRevert("KRUNE: soulbound");
+        // forge-lint: disable-next-line(erc20-unchecked-transfer)
+        krune.transferFrom(from, to, amount);
+        vm.expectRevert("KRUNE: soulbound");
+        krune.approve(to, amount);
+        vm.stopPrank();
+
+        assertEq(krune.balanceOf(to), before);
+        assertEq(krune.balanceOf(from), 1e30);
+    }
+
+    /// @notice The consequence Staking depends on: a KRUNE balance can only ever
+    ///         go up, so a staking position that references one can never become
+    ///         under-backed.
+    function testFuzz_balancesAreMonotonicallyNonDecreasing(uint256 a, uint256 b) public {
+        a = bound(a, 0, 1e30);
+        b = bound(b, 0, 1e30);
+
+        vm.prank(ADMIN);
+        krune.mintEarned(USER, a, keccak256("a"));
+        uint256 afterFirst = krune.balanceOf(USER);
+
+        vm.startPrank(USER);
+        (bool ok,) = address(krune).call(abi.encodeWithSignature("transfer(address,uint256)", STRANGER, a));
+        assertFalse(ok);
+        (ok,) = address(krune).call(abi.encodeWithSignature("burn(uint256)", a));
+        assertFalse(ok, "no burn path exists either");
+        vm.stopPrank();
+
+        vm.prank(ADMIN);
+        krune.mintEarned(USER, b, keccak256("b"));
+        assertGe(krune.balanceOf(USER), afterFirst);
     }
 }

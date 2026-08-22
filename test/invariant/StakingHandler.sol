@@ -8,34 +8,46 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {KarmaShard} from "../../contracts/KarmaShard.sol";
 import {Staking} from "../../contracts/Staking.sol";
+import {Treasury} from "../../contracts/Treasury.sol";
+import {MockERC20} from "../mocks/MockERC20.sol";
 
 /// @notice Bounded random driver for the Staking invariant run.
 contract StakingHandler is CommonBase, StdCheats, StdUtils {
     Staking public immutable staking;
+    Treasury public immutable treasury;
     IERC20 public immutable krune;
     IERC20 public immutable kdex;
     KarmaShard public immutable kshrd;
+    MockERC20 public immutable usdc;
     address public immutable stakingOwner;
 
     address[] public actors;
 
-    /// @notice Sum of principals believed to be inside the contract.
-    uint256 public ghostPrincipalKrune;
+    /// @notice Sum of KDEX principal believed to be inside the contract.
     uint256 public ghostPrincipalKdex;
-    /// @notice Every wei of KSHRD ever minted through unstake().
-    uint256 public ghostKshrdMinted;
+    /// @notice Every wei of USDC ever paid into the fee pool.
+    uint256 public ghostUsdcDeposited;
+    /// @notice Every wei of KSHRD ever settled by unstake(), whether it was
+    ///         minted straight away or deferred into `unclaimedYield`.
+    uint256 public ghostKshrdClaimed;
+    /// @notice Every wei of KSHRD ever destroyed by a redemption.
+    uint256 public ghostKshrdRedeemed;
 
     uint256 public stakeCalls;
     uint256 public unstakeCalls;
+    uint256 public depositCalls;
+    uint256 public redeemCalls;
     uint256 public warpCalls;
     uint256 public pauseCalls;
 
     constructor(Staking staking_, address owner_, address[] memory actors_) {
         staking = staking_;
         stakingOwner = owner_;
+        treasury = staking_.treasury();
         krune = staking_.krune();
         kdex = staking_.kdex();
         kshrd = staking_.kshrd();
+        usdc = MockERC20(address(staking_.usdc()));
         for (uint256 i = 0; i < actors_.length; i++) {
             actors.push(actors_[i]);
         }
@@ -53,24 +65,26 @@ contract StakingHandler is CommonBase, StdCheats, StdUtils {
         if (staking.paused()) return;
         address a = _actor(actorSeed);
 
-        uint256 kb = krune.balanceOf(a);
+        // KRUNE is referenced, not escrowed, so what is available to stake is
+        // the wallet balance MINUS whatever this position already claims.
+        (uint256 referenced,,,,,,) = staking.positions(a);
+        uint256 free = krune.balanceOf(a) - referenced;
         uint256 db = kdex.balanceOf(a);
-        if (kb == 0 || db == 0) return;
+        if (free == 0 || db == 0) return;
 
-        kruneAmt = bound(kruneAmt, 1, kb);
+        kruneAmt = bound(kruneAmt, 1, free);
         kdexAmt = bound(kdexAmt, 1, db);
 
         vm.prank(a);
         staking.stake(kruneAmt, kdexAmt);
 
-        ghostPrincipalKrune += kruneAmt;
         ghostPrincipalKdex += kdexAmt;
         stakeCalls++;
     }
 
     function unstake(uint256 actorSeed) external {
         address a = _actor(actorSeed);
-        (uint256 pk, uint256 pd, uint256 startedAt,,, bool active) = staking.positions(a);
+        (, uint256 pd,, uint256 startedAt,,, bool active) = staking.positions(a);
         if (!active) return;
         // forge-lint: disable-next-line(block-timestamp)
         if (block.timestamp < startedAt + staking.LOCK_PERIOD()) return;
@@ -85,10 +99,40 @@ contract StakingHandler is CommonBase, StdCheats, StdUtils {
         require(minted == expected, "HANDLER: pendingKshrd disagreed with unstake");
         require(kshrd.balanceOf(a) == shardsBefore + minted, "HANDLER: minted shards not delivered");
 
-        ghostKshrdMinted += minted;
-        ghostPrincipalKrune -= pk;
+        ghostKshrdClaimed += minted;
         ghostPrincipalKdex -= pd;
         unstakeCalls++;
+    }
+
+    /// @notice Real revenue arriving. This is the only thing that can increase
+    ///         what anyone is owed, and it always moves USDC to do it.
+    function depositFees(uint256 amount) external {
+        amount = bound(amount, 0, 100_000e6);
+        address payer = address(this);
+        usdc.mint(payer, amount);
+        usdc.approve(address(staking), amount);
+        staking.depositFees(amount);
+
+        ghostUsdcDeposited += amount;
+        depositCalls++;
+    }
+
+    /// @notice Redeeming must not be able to push the treasury under water: it
+    ///         removes the same dollar from both sides of the ratio.
+    function redeem(uint256 actorSeed, uint256 amount) external {
+        address a = _actor(actorSeed);
+        uint256 held = kshrd.balanceOf(a);
+        if (held < treasury.usdcScale()) return;
+        amount = bound(amount, treasury.usdcScale(), held);
+
+        uint256 supplyBefore = kshrd.totalSupply();
+        vm.startPrank(a);
+        kshrd.approve(address(treasury), amount);
+        treasury.redeem(amount, true);
+        vm.stopPrank();
+
+        ghostKshrdRedeemed += supplyBefore - kshrd.totalSupply();
+        redeemCalls++;
     }
 
     function warp(uint256 secs) external {
