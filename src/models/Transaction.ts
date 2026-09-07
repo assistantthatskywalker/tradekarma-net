@@ -26,22 +26,24 @@ export class TransactionLog {
   transactions: Map<string, Transaction> = new Map();
 
   record(tx: Transaction): void {
-    this.transactions.set(tx.id, tx);
+    if (this.transactions.has(tx.id)) throw new Error("duplicate transaction id");
+    this.transactions.set(tx.id, structuredClone(tx));
   }
 
   getByUser(userId: string): Transaction[] {
     return Array.from(this.transactions.values()).filter(
       (tx) => tx.userId === userId
-    );
+    ).map(tx => structuredClone(tx));
   }
 
   getByType(type: TransactionType): Transaction[] {
     return Array.from(this.transactions.values()).filter(
       (tx) => tx.type === type
-    );
+    ).map(tx => structuredClone(tx));
   }
 
   verify(id: string): Transaction | null {
-    return this.transactions.get(id) || null;
+    const tx = this.transactions.get(id);
+    return tx ? structuredClone(tx) : null;
   }
 }

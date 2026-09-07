@@ -67,7 +67,12 @@ const header = `/**
 `;
 
 const output = `${header}\n${sections.join('\n\n')}\n`;
-writeFileSync(targetFile, output);
+if (process.argv.includes('--check')) {
+  if (!existsSync(targetFile) || readFileSync(targetFile, 'utf8') !== output) {
+    console.error('Generated ABIs are stale. Run npm run abis after forge build.');
+    process.exit(1);
+  }
+} else writeFileSync(targetFile, output);
 
 console.log(`generate-abis: wrote ${path.relative(rootDir, targetFile)} from ${CONTRACTS.length} artifacts:`);
 for (const { name, exportName } of CONTRACTS) {

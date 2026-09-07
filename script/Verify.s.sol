@@ -121,6 +121,8 @@ contract Verify is Script {
         bytes32 burner = kshrd.BURNER_ROLE();
         bytes32 defaultAdmin = kshrd.DEFAULT_ADMIN_ROLE();
 
+        _check(kshrd.getRoleMemberCount(minter) == 1, "exactly one KSHRD minter");
+        _check(kshrd.getRoleMemberCount(burner) == 1, "exactly one KSHRD burner");
         _check(kshrd.hasRole(minter, address(staking)), "MINTER_ROLE held by Staking");
         _check(kshrd.hasRole(burner, address(treasury)), "BURNER_ROLE held by Treasury");
         _check(!kshrd.hasRole(minter, address(treasury)), "MINTER_ROLE NOT held by Treasury");
@@ -172,6 +174,7 @@ contract Verify is Script {
         _checkAddr(address(staking.kdex()), address(kdex), "kdex()");
         _checkAddr(address(staking.kshrd()), address(kshrd), "kshrd()");
         _checkAddr(staking.owner(), adminAddr, "owner()");
+        _checkAddr(address(staking.treasury()), _envAddress("TREASURY_ADDRESS"), "staking treasury()");
         _check(!staking.paused(), "not paused");
     }
 

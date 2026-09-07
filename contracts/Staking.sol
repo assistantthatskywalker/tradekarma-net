@@ -103,6 +103,17 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
      *         much of the balance is still unspoken for, not where it is.
      */
     uint256 public unallocatedFees;
+    /// @notice Conservative reserve for allocated, unminted rewards (including rounding dust).
+    uint256 public unmintedReserveUsdc;
+
+    /// @notice All reserved USDC: minted claims, unminted allocations, and carried fees.
+    function totalReservedUsdc() public view returns (uint256) {
+        return treasury.totalOutstandingLiability() + unmintedReserveUsdc + unallocatedFees;
+    }
+
+    function reservesCovered() external view returns (bool) {
+        return usdc.balanceOf(address(treasury)) >= totalReservedUsdc();
+    }
 
     event Staked(address indexed user, uint256 krune, uint256 kdex);
     event Accrued(address indexed user, uint256 usdcAmount);
@@ -166,7 +177,9 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
      *      weight — never discarded, and never a division by zero.
      */
     function depositFees(uint256 usdcAmount) external nonReentrant {
+        uint256 beforeBalance = usdc.balanceOf(address(treasury));
         usdc.safeTransferFrom(msg.sender, address(treasury), usdcAmount);
+        require(usdc.balanceOf(address(treasury)) - beforeBalance == usdcAmount, "STAKE: unsupported fee token");
 
         uint256 weight = totalWeight;
         uint256 pool = unallocatedFees + usdcAmount;
@@ -177,6 +190,7 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
             allocated = Math.mulDiv(delta, weight, SCALE, Math.Rounding.Ceil);
         }
         unallocatedFees = pool - allocated;
+        unmintedReserveUsdc += allocated;
 
         emit FeeDeposited(msg.sender, usdcAmount, allocated, rewardPerWeightStored);
         emit CollateralRatioUpdated(
@@ -345,7 +359,9 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
         kshrdMinted = earned * usdcScale;
 
         if (kshrdMinted > 0) {
-            try kshrd.mint(msg.sender, kshrdMinted) {}
+            try kshrd.mint(msg.sender, kshrdMinted) {
+                unmintedReserveUsdc -= earned;
+            }
             catch {
                 unclaimedYield[msg.sender] += kshrdMinted;
                 emit YieldMintDeferred(msg.sender, kshrdMinted);
@@ -369,6 +385,7 @@ contract Staking is Ownable, Pausable, ReentrancyGuard {
         require(amount > 0, "STAKE: nothing to claim");
         unclaimedYield[msg.sender] = 0;
         kshrd.mint(msg.sender, amount);
+        unmintedReserveUsdc -= amount / usdcScale;
         emit YieldClaimed(msg.sender, amount);
     }
 

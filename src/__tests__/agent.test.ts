@@ -1,3 +1,5 @@
+import { VerifiedEventStore } from '../logic/earning';
+import { TransactionType } from '../models/Transaction';
 /**
  * Sprint 6: Agent-agnostic API + DAO tests.
  * Proves ≥3 different "agents" (mock GPT, mock Opus, mock local) drive the same
@@ -35,41 +37,40 @@ function agent(provider: string): AgentIdentity {
   return { agentId: `agent-${provider}`, provider, capabilities: caps };
 }
 
-describe('AgentInterface — provider agnostic', () => {
-  it('mock GPT, Opus, and local agents all get identical results', () => {
-    const req = (a: AgentIdentity): AgentRequest => ({
-      agent: a,
-      capability: 'write.review',
-      userId: 'alice',
-      payload: { productId: 'p1', orderValue: 100, hasPhotos: true, textLength: 250, isDetailed: true },
-    });
+function authenticatedInterface(state: PlatformState, capabilities = caps, users = ['alice']) {
+  const events = new VerifiedEventStore();
+  events.register({ id: 'review1', userId: 'alice', type: TransactionType.REVIEW, subjectId: 'p1', verifiedAt: new Date(1),
+    orderValue: 100, hasPhotos: true, textLength: 250, isDetailed: true });
+  return new AgentInterface(state, token => token === 'trusted-session' ? {
+    agentId: 'server-identity', capabilities, userIds: users, expiresAt: Date.now() + 60000,
+  } : undefined, events);
+}
 
-    const results = ['openai', 'anthropic', 'local'].map((prov) => {
-      const iface = new AgentInterface(freshState());
-      return iface.handle(req(agent(prov)));
-    });
-
-    expect(results.every((r) => r.ok)).toBe(true);
-    // Same deterministic KRUNE award regardless of "provider".
-    const amounts = results.map((r) => r.data.amountKRUNE);
-    expect(new Set(amounts).size).toBe(1);
+describe('Agent trust boundary', () => {
+  const req: AgentRequest = { agent: agent('local'), capability: 'write.review', userId: 'alice', payload: { eventId: 'review1', orderValue: 999999 } };
+  it('ignores self-declared permissions and rejects missing authentication', () => {
+    expect(new AgentInterface(freshState()).handle(req).ok).toBe(false);
+    expect(authenticatedInterface(freshState()).handle(req, 'forged-token').ok).toBe(false);
+    expect(authenticatedInterface(freshState(), ['read.reputation']).handle(req, 'trusted-session').ok).toBe(false);
+    expect(authenticatedInterface(freshState(), caps, ['bob']).handle(req, 'trusted-session').ok).toBe(false);
   });
-
-  it('rejects a capability the agent did not declare', () => {
-    const iface = new AgentInterface(freshState());
-    const limited: AgentIdentity = { agentId: 'x', provider: 'local', capabilities: ['read.reputation'] };
-    const res = iface.handle({ agent: limited, capability: 'write.review', userId: 'alice', payload: {} });
-    expect(res.ok).toBe(false);
-    expect(res.error).toMatch(/capability/i);
+  it('uses verified server facts with the same result for every provider', () => {
+    for (const provider of ['openai', 'anthropic', 'local']) {
+      const api = authenticatedInterface(freshState());
+      expect(api.handle({ ...req, agent: agent(provider) }, 'trusted-session').data.amountKRUNE).toBe(117);
+      expect(api.handle(req, 'trusted-session').ok).toBe(false);
+    }
   });
-
-  it('read.reputation reflects prior writes', () => {
-    const state = freshState();
-    const iface = new AgentInterface(state);
-    iface.handle({ agent: agent('local'), capability: 'write.review', userId: 'alice', payload: { productId: 'p1', orderValue: 100, textLength: 100 } });
-    const rep = iface.handle({ agent: agent('local'), capability: 'read.reputation', userId: 'alice', payload: {} });
-    expect(rep.ok).toBe(true);
-    expect(rep.data.balance).toBeGreaterThan(0);
+  it('checks rate limits inside handle, using the real identity', () => {
+    const api = authenticatedInterface(freshState());
+    for (let i = 0; i < 60; i++) expect(api.handle({ ...req, agent: agent(String(i)), capability: 'read.reputation' }, 'trusted-session').ok).toBe(true);
+    expect(api.handle({ ...req, capability: 'read.reputation' }, 'trusted-session').error).toMatch(/rate limit/);
+  });
+  it('fails without evidence and preserves both ledgers', () => {
+    const state = freshState(); const api = authenticatedInterface(state);
+    expect(api.handle({ ...req, payload: { eventId: 'missing' } }, 'trusted-session').ok).toBe(false);
+    expect(state.kruneLedger.get('alice')).toBe(0);
+    expect(state.users.get('alice')!.getReputation()).toBe(0);
   });
 });
 
@@ -136,4 +137,14 @@ describe('DAO Governance', () => {
     expect(gov.vote('p', 'a', true, new Date(2026, 0, 1)).ok).toBe(false); // double vote
     expect(gov.vote('p', 'nobody', true, new Date(2026, 0, 1)).ok).toBe(false); // no KDEX
   });
+});
+
+it('governance snapshots capital so moved balances cannot vote twice', () => {
+  const ledger = new KarmaDexLedger(); ledger.set('a', 100);
+  const governance = new Governance(ledger); const now = new Date();
+  governance.createProposal('id', 'Title', 'Description', 'a', 10000, 100, now);
+  ledger.subtract('a', 100); ledger.add('b', 100);
+  expect(governance.vote('id', 'a', true, now).ok).toBe(true);
+  expect(governance.vote('id', 'b', true, now).ok).toBe(false);
+  expect(() => governance.createProposal('id', 'Overwrite', '', 'b', 10000, 1, now)).toThrow(/duplicate/);
 });

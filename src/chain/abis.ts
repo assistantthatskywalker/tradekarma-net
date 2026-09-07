@@ -79,12 +79,12 @@ export const karmaRuneAbi = [
     "name": "approve",
     "inputs": [
       {
-        "name": "spender",
+        "name": "",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "value",
+        "name": "",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -96,7 +96,7 @@ export const karmaRuneAbi = [
         "internalType": "bool"
       }
     ],
-    "stateMutability": "nonpayable"
+    "stateMutability": "pure"
   },
   {
     "type": "function",
@@ -284,6 +284,25 @@ export const karmaRuneAbi = [
   },
   {
     "type": "function",
+    "name": "settlementDigest",
+    "inputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "supportsInterface",
     "inputs": [
       {
@@ -332,12 +351,12 @@ export const karmaRuneAbi = [
     "name": "transfer",
     "inputs": [
       {
-        "name": "to",
+        "name": "",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "value",
+        "name": "",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -349,24 +368,24 @@ export const karmaRuneAbi = [
         "internalType": "bool"
       }
     ],
-    "stateMutability": "nonpayable"
+    "stateMutability": "pure"
   },
   {
     "type": "function",
     "name": "transferFrom",
     "inputs": [
       {
-        "name": "from",
+        "name": "",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "to",
+        "name": "",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "value",
+        "name": "",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -378,7 +397,7 @@ export const karmaRuneAbi = [
         "internalType": "bool"
       }
     ],
-    "stateMutability": "nonpayable"
+    "stateMutability": "pure"
   },
   {
     "type": "event",
@@ -1136,6 +1155,68 @@ export const karmaShardAbi = [
   },
   {
     "type": "function",
+    "name": "getRoleMember",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "index",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getRoleMemberCount",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getRoleMembers",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "grantRole",
     "inputs": [
       {
@@ -1621,6 +1702,11 @@ export const stakingAbi = [
         "internalType": "address"
       },
       {
+        "name": "_treasury",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
         "name": "initialOwner",
         "type": "address",
         "internalType": "address"
@@ -1643,7 +1729,7 @@ export const stakingAbi = [
   },
   {
     "type": "function",
-    "name": "YIELD_RATE_PER_SEC",
+    "name": "SCALE",
     "inputs": [],
     "outputs": [
       {
@@ -1665,6 +1751,19 @@ export const stakingAbi = [
         "internalType": "uint256"
       }
     ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "depositFees",
+    "inputs": [
+      {
+        "name": "usdcAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
     "stateMutability": "nonpayable"
   },
   {
@@ -1780,17 +1879,22 @@ export const stakingAbi = [
         "internalType": "uint256"
       },
       {
+        "name": "weight",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
         "name": "startedAt",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "lastAccrued",
+        "name": "rewardPerWeightPaid",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "accruedKshrd",
+        "name": "accruedUsdc",
         "type": "uint256",
         "internalType": "uint256"
       },
@@ -1808,6 +1912,32 @@ export const stakingAbi = [
     "inputs": [],
     "outputs": [],
     "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "reservesCovered",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "rewardPerWeightStored",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -1829,6 +1959,32 @@ export const stakingAbi = [
   },
   {
     "type": "function",
+    "name": "totalReservedUsdc",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "totalWeight",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "transferOwnership",
     "inputs": [
       {
@@ -1842,6 +1998,32 @@ export const stakingAbi = [
   },
   {
     "type": "function",
+    "name": "treasury",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract Treasury"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "unallocatedFees",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "unclaimedYield",
     "inputs": [
       {
@@ -1850,6 +2032,19 @@ export const stakingAbi = [
         "internalType": "address"
       }
     ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "unmintedReserveUsdc",
+    "inputs": [],
     "outputs": [
       {
         "name": "",
@@ -1880,6 +2075,32 @@ export const stakingAbi = [
     "stateMutability": "nonpayable"
   },
   {
+    "type": "function",
+    "name": "usdc",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IERC20"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "usdcScale",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
     "type": "event",
     "name": "Accrued",
     "inputs": [
@@ -1890,7 +2111,63 @@ export const stakingAbi = [
         "internalType": "address"
       },
       {
-        "name": "kshrd",
+        "name": "usdcAmount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "CollateralRatioUpdated",
+    "inputs": [
+      {
+        "name": "ratio",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "outstandingLiability",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "treasuryUsdc",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "FeeDeposited",
+    "inputs": [
+      {
+        "name": "from",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "usdcAmount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "allocated",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "rewardPerWeight",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -2129,16 +2406,29 @@ export const treasuryAbi = [
   },
   {
     "type": "function",
-    "name": "depositFees",
-    "inputs": [
+    "name": "SCALE",
+    "inputs": [],
+    "outputs": [
       {
-        "name": "usdcAmount",
+        "name": "",
         "type": "uint256",
         "internalType": "uint256"
       }
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "collateralRatio",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -2162,6 +2452,19 @@ export const treasuryAbi = [
         "name": "",
         "type": "address",
         "internalType": "contract KarmaShard"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "kshrdPerKdexRate",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -2235,6 +2538,45 @@ export const treasuryAbi = [
   },
   {
     "type": "function",
+    "name": "setKshrdPerKdexRate",
+    "inputs": [
+      {
+        "name": "rate",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "totalKshrdOutstanding",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "totalOutstandingLiability",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "transferOwnership",
     "inputs": [
       {
@@ -2274,16 +2616,16 @@ export const treasuryAbi = [
   },
   {
     "type": "event",
-    "name": "FeeDeposited",
+    "name": "KeepbackRateSet",
     "inputs": [
       {
-        "name": "from",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        "name": "oldRate",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       },
       {
-        "name": "usdcAmount",
+        "name": "newRate",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"

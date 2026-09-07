@@ -108,8 +108,8 @@ contract Deploy is Script {
         krune = new KarmaRune(deployer);
         kdex = new KarmaDex(kdexSupply, admin); // full supply to the multi-sig WALLET
         kshrd = new KarmaShard(deployer);
-        staking = new Staking(address(krune), address(kdex), address(kshrd), admin);
         treasury = new Treasury(usdc, address(kdex), address(kshrd), admin);
+        staking = new Staking(address(krune), address(kdex), address(kshrd), address(treasury), admin);
 
         // --- wiring --------------------------------------------------------
         // 1. Without this, `unstake()` cannot mint yield and every payout defers

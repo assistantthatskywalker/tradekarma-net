@@ -1,190 +1,112 @@
-/**
- * KRUNE Earning Mechanics
- * Logarithmic rewards, quality multipliers, retroactive helpfulness bonuses.
- */
-
+import { types } from 'node:util';
+/** Reward calculation for trusted, verified commerce events. No network adapter is implicit. */
 import { User } from '../models/User';
 import { Transaction, TransactionType, TransactionLog } from '../models/Transaction';
-import { v4 as uuidv4 } from 'uuid';
+import { assertAmount } from '../models/Ledger';
+
+export interface VerifiedEarningEvent {
+  id: string;
+  userId: string;
+  type: TransactionType;
+  subjectId: string;
+  verifiedAt: Date;
+  orderValue?: number;
+  hasPhotos?: boolean;
+  textLength?: number;
+  isDetailed?: boolean;
+  answerText?: string;
+  daysToShip?: number;
+  /** Referral evidence must come from activity records, not account age alone. */
+  activeSince?: Date;
+  activeThrough?: Date;
+}
+
+/** Trusted ingestion only. Do not expose register() to agents or public request payloads. */
+export class VerifiedEventStore {
+  private events = new Map<string, VerifiedEarningEvent>();
+  register(event: VerifiedEarningEvent): void {
+    if (!event.id || this.events.has(event.id)) throw new Error('duplicate or missing evidence id');
+    this.events.set(event.id, structuredClone(event));
+  }
+  get(id: string): VerifiedEarningEvent | undefined {
+    const event = this.events.get(id);
+    return event && structuredClone(event);
+  }
+}
 
 export interface EarningContext {
   userId: string;
   transactionLog: TransactionLog;
   user: User;
+  evidence?: VerifiedEarningEvent;
+  now?: Date;
 }
 
-/**
- * Diminishing-returns earning curve (anti-farming).
- * The Nth action earns less than the first: reward = 10 / log2(count + 2).
- * count 0 → 10, count 1 → ~6.3, count 49 → ~1.8. Quality & detail still multiply.
- */
 export function logarithmicBase(actionCount: number): number {
+  assertAmount(actionCount);
   return 10 / Math.log2(actionCount + 2);
 }
-
-/**
- * Quality multiplier for reviews.
- * Detailed reviews (photos, text) earn 3–5x more.
- */
-export function qualityMultiplier(
-  hasPhotos: boolean,
-  textLength: number,
-  isDetailed: boolean
-): number {
-  let multiplier = 1.0;
-  if (hasPhotos) multiplier *= 2;
-  if (textLength > 200) multiplier *= 1.5;
-  if (isDetailed) multiplier *= 1.3;
-  return Math.min(multiplier, 5.0); // Cap at 5x
+export function qualityMultiplier(hasPhotos: boolean, textLength: number, isDetailed: boolean): number {
+  assertAmount(textLength);
+  return Math.min((hasPhotos ? 2 : 1) * (textLength > 200 ? 1.5 : 1) * (isDetailed ? 1.3 : 1), 5);
+}
+export function firstReviewBonus(log: TransactionLog, productId: string): number {
+  return log.getByType(TransactionType.REVIEW).some(tx => tx.metadata.productId === productId) ? 1 : 3;
 }
 
-/**
- * First review on a product earns 3x bonus.
- */
-export function firstReviewBonus(
-  transactionLog: TransactionLog,
-  productId: string
-): number {
-  const existingReviews = transactionLog
-    .getByType(TransactionType.REVIEW)
-    .filter((tx) => tx.metadata?.productId === productId);
-  return existingReviews.length === 0 ? 3.0 : 1.0;
+function evidence(ctx: EarningContext, type: TransactionType, subjectId: string): VerifiedEarningEvent {
+  const e = ctx.evidence;
+  const now = (ctx.now ?? new Date()).getTime();
+  if (ctx.user.profile.id !== ctx.userId || !subjectId || !e || !e.id || e.userId !== ctx.userId ||
+      e.type !== type || e.subjectId !== subjectId || !types.isDate(e.verifiedAt) ||
+      !Number.isFinite(e.verifiedAt.getTime()) || e.verifiedAt.getTime() > now) {
+    throw new Error('trusted verified earning evidence required');
+  }
+  if (ctx.transactionLog.verify(e.id)) throw new Error('earning event already awarded');
+  if (ctx.transactionLog.getByType(type).some(tx =>
+    tx.metadata.subjectId === subjectId && (type === TransactionType.REFERRAL || type === TransactionType.SHIP || tx.userId === ctx.userId))) {
+    throw new Error('subject already rewarded');
+  }
+  return e;
 }
-
-/**
- * Award KRUNE for a review.
- * Base (10 points) × log multiplier × quality multiplier × first-review bonus.
- */
-export function awardReview(
-  context: EarningContext,
-  productId: string,
-  orderValue: number,
-  hasPhotos: boolean,
-  textLength: number,
-  isDetailed: boolean
-): Transaction {
-  const actionCount = context.transactionLog
-    .getByUser(context.userId)
-    .filter((tx) => tx.type === TransactionType.REVIEW).length;
-
-  const baseAmount = logarithmicBase(actionCount);
-  const quality = qualityMultiplier(hasPhotos, textLength, isDetailed);
-  const firstBonus = firstReviewBonus(context.transactionLog, productId);
-
-  const amount = Math.round(baseAmount * quality * firstBonus);
-
-  const tx: Transaction = {
-    id: uuidv4(),
-    userId: context.userId,
-    type: TransactionType.REVIEW,
-    amountKRUNE: amount,
-    multiplier: quality * firstBonus,
-    metadata: {
-      productId,
-      orderValue,
-      hasPhotos,
-      textLength,
-      isDetailed,
-    },
-    timestamp: new Date(),
-  };
-
-  context.transactionLog.record(tx);
-  context.user.addKRUNE(amount, tx.id);
-
+function record(ctx: EarningContext, e: VerifiedEarningEvent, amount: number, multiplier: number, metadata: Record<string, unknown>): Transaction {
+  assertAmount(amount);
+  assertAmount(ctx.user.getReputation() + amount);
+  assertAmount(ctx.user.reputation.earned + amount);
+  if (ctx.user.reputation.transactions.includes(e.id)) throw new Error('duplicate reputation event');
+  const tx: Transaction = { id: e.id, userId: ctx.userId, type: e.type, amountKRUNE: amount, multiplier,
+    metadata: { ...metadata, subjectId: e.subjectId }, timestamp: new Date(e.verifiedAt),
+    isRetroactive: e.type === TransactionType.HELP };
+  ctx.transactionLog.record(tx);
+  ctx.user.addKRUNE(amount, tx.id);
   return tx;
 }
-
-/**
- * Award KRUNE for helping other buyers retroactively.
- * A helpful answer to a buyer question earns +5 KRUNE.
- */
-export function awardHelpfulness(
-  context: EarningContext,
-  questionId: string,
-  answerText: string
-): Transaction {
-  const amount = 5; // Fixed amount for helpful answers
-
-  const tx: Transaction = {
-    id: uuidv4(),
-    userId: context.userId,
-    type: TransactionType.HELP,
-    amountKRUNE: amount,
-    multiplier: 1.0,
-    metadata: {
-      questionId,
-      answerText,
-    },
-    timestamp: new Date(),
-    isRetroactive: true,
-  };
-
-  context.transactionLog.record(tx);
-  context.user.addKRUNE(amount, tx.id);
-
-  return tx;
+export function awardReview(ctx: EarningContext, productId: string, orderValue: number, hasPhotos: boolean, textLength: number, isDetailed: boolean): Transaction {
+  const e = evidence(ctx, TransactionType.REVIEW, productId);
+  if (!Number.isFinite(orderValue) || orderValue <= 0 || e.orderValue !== orderValue || e.hasPhotos !== hasPhotos ||
+      e.textLength !== textLength || e.isDetailed !== isDetailed) throw new Error('review facts differ from verified purchase evidence');
+  const count = ctx.transactionLog.getByUser(ctx.userId).filter(t => t.type === TransactionType.REVIEW).length;
+  const multiplier = qualityMultiplier(hasPhotos, textLength, isDetailed) * firstReviewBonus(ctx.transactionLog, productId);
+  return record(ctx, e, Math.round(logarithmicBase(count) * multiplier), multiplier, { productId, orderValue, hasPhotos, textLength, isDetailed });
 }
-
-/**
- * Award KRUNE for successful referral.
- * Referred user must remain active for 90 days.
- */
-export function awardReferral(
-  context: EarningContext,
-  referredUserId: string
-): Transaction {
-  const amount = 30; // Fixed amount for successful referral
-
-  const tx: Transaction = {
-    id: uuidv4(),
-    userId: context.userId,
-    type: TransactionType.REFERRAL,
-    amountKRUNE: amount,
-    multiplier: 1.0,
-    metadata: {
-      referredUserId,
-    },
-    timestamp: new Date(),
-  };
-
-  context.transactionLog.record(tx);
-  context.user.addKRUNE(amount, tx.id);
-
-  return tx;
+export function awardHelpfulness(ctx: EarningContext, questionId: string, answerText: string): Transaction {
+  const e = evidence(ctx, TransactionType.HELP, questionId);
+  if (!answerText.trim() || e.answerText !== answerText) throw new Error('verified helpful answer required');
+  return record(ctx, e, 5, 1, { questionId, answerText });
 }
-
-/**
- * Award KRUNE for on-time shipment.
- * Amount scales with order value (0.1 KRUNE per $1, capped at 100).
- */
-export function awardShipment(
-  context: EarningContext,
-  orderId: string,
-  orderValue: number,
-  daysToShip: number
-): Transaction {
-  const isOnTime = daysToShip <= 3; // On-time = ship within 3 days
-  const baseAmount = Math.min(Math.round(orderValue * 0.1), 100);
-  const amount = isOnTime ? baseAmount : Math.round(baseAmount * 0.5); // Half if late
-
-  const tx: Transaction = {
-    id: uuidv4(),
-    userId: context.userId,
-    type: TransactionType.SHIP,
-    amountKRUNE: amount,
-    multiplier: isOnTime ? 1.0 : 0.5,
-    metadata: {
-      orderId,
-      orderValue,
-      daysToShip,
-      isOnTime,
-    },
-    timestamp: new Date(),
-  };
-
-  context.transactionLog.record(tx);
-  context.user.addKRUNE(amount, tx.id);
-
-  return tx;
+export function awardReferral(ctx: EarningContext, referredUserId: string): Transaction {
+  const e = evidence(ctx, TransactionType.REFERRAL, referredUserId);
+  const since = e.activeSince?.getTime();
+  const through = e.activeThrough?.getTime();
+  if (referredUserId === ctx.userId || since === undefined || through === undefined ||
+      !Number.isFinite(since) || !Number.isFinite(through) || through > e.verifiedAt.getTime() ||
+      through - since < 90 * 86400_000) throw new Error('referral requires 90 days of verified activity and a different user');
+  return record(ctx, e, 30, 1, { referredUserId });
+}
+export function awardShipment(ctx: EarningContext, orderId: string, orderValue: number, daysToShip: number): Transaction {
+  const e = evidence(ctx, TransactionType.SHIP, orderId);
+  if (!Number.isFinite(orderValue) || orderValue <= 0 || !Number.isFinite(daysToShip) || daysToShip < 0 ||
+      e.orderValue !== orderValue || e.daysToShip !== daysToShip) throw new Error('verified shipment facts required');
+  const multiplier = daysToShip <= 3 ? 1 : 0.5;
+  return record(ctx, e, Math.round(Math.min(Math.round(orderValue * .1), 100) * multiplier), multiplier, { orderId, orderValue, daysToShip });
 }

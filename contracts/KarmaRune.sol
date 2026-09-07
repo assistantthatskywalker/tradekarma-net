@@ -43,6 +43,8 @@ contract KarmaRune is ERC20, AccessControl {
      *      replay a backlog. Both paths are safe against this mapping.
      */
     mapping(bytes32 => bool) public settled;
+    /// @notice Immutable recipient/amount commitment for reconciliation after process loss.
+    mapping(bytes32 => bytes32) public settlementDigest;
 
     event Earned(address indexed user, uint256 amount, bytes32 reasonHash);
 
@@ -71,6 +73,7 @@ contract KarmaRune is ERC20, AccessControl {
     function mintEarned(address user, uint256 amount, bytes32 reasonHash) external onlyRole(MINTER_ROLE) {
         require(!settled[reasonHash], "KRUNE: already settled");
         settled[reasonHash] = true;
+        settlementDigest[reasonHash] = keccak256(abi.encode(user, amount));
         _mint(user, amount);
         emit Earned(user, amount, reasonHash);
     }

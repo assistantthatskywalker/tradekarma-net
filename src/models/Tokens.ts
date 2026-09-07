@@ -1,89 +1,88 @@
-/**
- * Token Models: KDEX (investment), KSHRD (yield)
- * Phase 1: Database representation (not yet on-chain)
- */
-
-import { Balance, BalanceLedger } from './Ledger';
-
+/** Local reference simulation. Whole reputation/capital units; rewards are integer USDC base units. */
+import { randomUUID } from 'node:crypto';
+import { Balance, BalanceLedger, assertAmount } from './Ledger';
 export type KarmaDexBalance = Balance;
-
 export class KarmaDexLedger extends BalanceLedger {}
-
 export interface KarmaShard {
-  id: string; // Vault key: `${userId}-${stakedAt ms}`
+  id: string;
   userId: string;
-  amountStaked: number; // KSHRD accrued from staking
-  kruneStaked: number; // KRUNE locked
-  kdexStaked: number; // KDEX locked
+  kruneStaked: number;
+  kdexStaked: number;
   stakedAt: Date;
-  matureAt: Date; // Unlock date (90 days)
-  lastYieldAt: Date;
+  matureAt: Date;
+  weight: bigint;
+  paid: bigint;
+  accruedUsdc: bigint;
 }
-
+export function integerSqrt(n: bigint): bigint {
+  if (n < 0n) throw new Error('negative root');
+  if (n < 2n) return n;
+  let x = n, y = (x + 1n) / 2n;
+  while (y < x) { x = y; y = (x + n / x) / 2n; }
+  return x;
+}
+const SCALE = 10n ** 18n;
 export class KarmaShardVault {
-  stakes: Map<string, KarmaShard> = new Map();
-
-  create(
-    userId: string,
-    kruneAmount: number,
-    kdexAmount: number,
-    lockDays: number = 90
-  ): KarmaShard {
-    const now = new Date();
-    const matureAt = new Date(now.getTime() + lockDays * 24 * 60 * 60 * 1000);
-
-    const shard: KarmaShard = {
-      id: `${userId}-${now.getTime()}`,
-      userId,
-      amountStaked: 0, // Starts at zero, accrues daily
-      kruneStaked: kruneAmount,
-      kdexStaked: kdexAmount,
-      stakedAt: now,
-      matureAt,
-      lastYieldAt: now,
-    };
-
-    this.stakes.set(shard.id, shard);
-    return shard;
+  private positions = new Map<string, KarmaShard>();
+  private accumulator = 0n;
+  private weight = 0n;
+  private carry = 0n;
+  private reserve = 0n;
+  /** Test/reference cash ledger, never an assertion that a real payment occurred. */
+  readonly usdcBalances = new BalanceLedger();
+  get stakes(): Map<string, KarmaShard> {
+    return new Map([...this.positions].map(([id, p]) => [id, structuredClone(p)]));
   }
-
   getByUser(userId: string): KarmaShard[] {
-    return Array.from(this.stakes.values()).filter((s) => s.userId === userId);
+    return [...this.stakes.values()].filter(p => p.userId === userId);
   }
-
-  /**
-   * Accrue daily yield: 1% annual (0.00274% daily).
-   * Formula: (KRUNE × KDEX) ^ 0.5 × 0.000274 per day
-   * This creates a symbiotic curve: both tokens needed, balanced incentives.
-   */
-  accrueYield(stakeId: string, days: number = 1): number {
-    const stake = this.stakes.get(stakeId);
-    if (!stake) return 0;
-
-    const now = new Date();
-    if (now < stake.matureAt) {
-      // Accruing (not mature yet)
-      const geometric = Math.sqrt(stake.kruneStaked * stake.kdexStaked);
-      const dailyYield = geometric * 0.000274; // ~1% annual
-      const totalYield = dailyYield * days;
-      stake.amountStaked += totalYield;
-      stake.lastYieldAt = now;
-      return totalYield;
-    }
-    return 0;
+  create(userId: string, kruneAmount: number, kdexAmount: number, lockDays = 90): KarmaShard {
+    assertAmount(kruneAmount, true); assertAmount(kdexAmount, true);
+    if (lockDays !== 90) throw new Error('lock is 90 days');
+    let p = [...this.positions.values()].find(p => p.userId === userId);
+    const krune = (p?.kruneStaked ?? 0) + kruneAmount;
+    const kdex = (p?.kdexStaked ?? 0) + kdexAmount;
+    assertAmount(krune); assertAmount(kdex);
+    if (p) this.settle(p);
+    else p = { id: randomUUID(), userId, kruneStaked: 0, kdexStaked: 0, weight: 0n,
+      paid: this.accumulator, accruedUsdc: 0n, stakedAt: new Date(), matureAt: new Date() };
+    const weight = integerSqrt(BigInt(krune) * SCALE) * integerSqrt(BigInt(kdex) * SCALE);
+    this.weight += weight - p.weight;
+    Object.assign(p, { kruneStaked: krune, kdexStaked: kdex, weight, stakedAt: new Date(),
+      matureAt: new Date(Date.now() + 90 * 86400_000) });
+    this.positions.set(p.id, p);
+    return structuredClone(p);
   }
-
-  redeem(stakeId: string): number {
-    const stake = this.stakes.get(stakeId);
-    if (!stake) return 0;
-
-    const now = new Date();
-    if (now < stake.matureAt) return 0; // Not mature yet
-
-    const amount = stake.amountStaked;
-    // In Phase 2, this would transfer to user wallet or treasury
-    // For now, just return the amount
-    this.stakes.delete(stakeId);
-    return amount;
+  private settle(p: KarmaShard): void {
+    p.accruedUsdc += p.weight * (this.accumulator - p.paid) / SCALE;
+    p.paid = this.accumulator;
+  }
+  /** Mirrors the current Solidity carry policy, including allocation to the next active pool. */
+  depositFees(payer: string, usdcUnits: number): void {
+    assertAmount(usdcUnits);
+    if (!this.usdcBalances.subtract(payer, usdcUnits)) throw new Error('insufficient fee funds');
+    this.reserve += BigInt(usdcUnits);
+    const pool = this.carry + BigInt(usdcUnits);
+    const delta = this.weight ? pool * SCALE / this.weight : 0n;
+    const allocated = this.weight ? (delta * this.weight + SCALE - 1n) / SCALE : 0n;
+    this.accumulator += delta;
+    this.carry = pool - allocated;
+  }
+  pendingUsdc(id: string): bigint {
+    const p = this.positions.get(id);
+    return p ? p.accruedUsdc + p.weight * (this.accumulator - p.paid) / SCALE : 0n;
+  }
+  redeem(id: string): bigint {
+    const p = this.positions.get(id);
+    if (!p || Date.now() < p.matureAt.getTime()) throw new Error('stake missing or locked');
+    const reward = this.pendingUsdc(id);
+    if (reward > this.reserve) throw new Error('reward reserve shortfall');
+    const nextBalance = this.usdcBalances.get(p.userId) + Number(reward);
+    assertAmount(nextBalance);
+    this.usdcBalances.set(p.userId, nextBalance);
+    this.reserve -= reward;
+    this.weight -= p.weight;
+    this.positions.delete(id);
+    return reward;
   }
 }

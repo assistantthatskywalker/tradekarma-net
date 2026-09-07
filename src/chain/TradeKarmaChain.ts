@@ -36,9 +36,18 @@ export const USDC_DECIMALS = 6;
 export const MINTER_ROLE: Hash = keccak256(toHex('MINTER_ROLE'));
 export const BURNER_ROLE: Hash = keccak256(toHex('BURNER_ROLE'));
 
+function strictUnits(amount: string | number, decimals: number): bigint {
+  if (typeof amount === 'number' && (!Number.isSafeInteger(amount) || amount < 0)) {
+    throw new Error('use a decimal string for fractional amounts');
+  }
+  const value = String(amount);
+  if (!/^(0|[1-9][0-9]*)(\.[0-9]+)?$/.test(value) || (value.split('.')[1]?.length ?? 0) > decimals) throw new Error('invalid amount or excess precision');
+  return parseUnits(value, decimals);
+}
+
 /** Human amount (e.g. "12.5" or 12.5) -> KRUNE/KDEX/KSHRD base units. */
 export function toKarmaUnits(amount: string | number): bigint {
-  return parseUnits(String(amount), KARMA_DECIMALS);
+  return strictUnits(amount, KARMA_DECIMALS);
 }
 
 /** KRUNE/KDEX/KSHRD base units -> human decimal string. */
@@ -48,7 +57,7 @@ export function fromKarmaUnits(amount: bigint): string {
 
 /** Human USDC amount (e.g. "12.50" or 12.5) -> USDC base units (6 decimals). */
 export function toUsdcUnits(amount: string | number): bigint {
-  return parseUnits(String(amount), USDC_DECIMALS);
+  return strictUnits(amount, USDC_DECIMALS);
 }
 
 /** USDC base units (6 decimals) -> human decimal string. */
@@ -60,8 +69,9 @@ export interface StakingPosition {
   krune: bigint;
   kdex: bigint;
   startedAt: bigint;
-  lastAccrued: bigint;
-  accruedKshrd: bigint;
+  weight: bigint;
+  rewardPerWeightPaid: bigint;
+  accruedUsdc: bigint;
   active: boolean;
 }
 
@@ -77,11 +87,42 @@ export class TradeKarmaChain {
   private readonly addresses: ContractAddresses;
 
   constructor(
-    chainId: ChainId,
+    private readonly chainId: ChainId,
     private readonly publicClient: TradeKarmaPublicClient,
-    private readonly walletClient?: TradeKarmaWalletClient
+    private readonly walletClient?: TradeKarmaWalletClient,
+    addresses?: ContractAddresses
   ) {
-    this.addresses = getContractAddresses(chainId);
+    this.addresses = addresses ? { ...addresses } : getContractAddresses(chainId);
+    if (publicClient.chain && publicClient.chain.id !== chainId) throw new Error("public client chain mismatch");
+    if (walletClient?.chain && walletClient.chain.id !== chainId) throw new Error("wallet client chain mismatch");
+  }
+
+  getSettlementDomain() {
+    return { chainId: this.chainId, karmaRune: requireAddress(this.addresses, 'karmaRune') };
+  }
+
+  async kruneSettlementDigest(reasonHash: Hash): Promise<Hash> {
+    return this.publicClient.readContract({ address: requireAddress(this.addresses, 'karmaRune'),
+      abi: karmaRuneAbi, functionName: 'settlementDigest', args: [reasonHash], blockTag: 'finalized' });
+  }
+
+  async waitForMintReceipt(hash: Hash): Promise<'success' | 'reverted'> {
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash, confirmations: 1, timeout: 60_000 });
+    return receipt.status;
+  }
+
+  async approveKdexForStaking(amount: bigint): Promise<Hash> {
+    const wallet = this.writer();
+    return wallet.writeContract({ address: requireAddress(this.addresses, 'karmaDex'), abi: karmaDexAbi,
+      functionName: 'approve', args: [requireAddress(this.addresses, 'staking'), amount], account: wallet.account, chain: wallet.chain });
+  }
+
+  async approveUsdcForFees(amount: bigint): Promise<Hash> {
+    const token = await this.publicClient.readContract({ address: requireAddress(this.addresses, 'staking'),
+      abi: stakingAbi, functionName: 'usdc' });
+    const wallet = this.writer();
+    return wallet.writeContract({ address: token, abi: karmaDexAbi, functionName: 'approve',
+      args: [requireAddress(this.addresses, 'staking'), amount], account: wallet.account, chain: wallet.chain });
   }
 
   private writer(): TradeKarmaWalletClient {
@@ -397,13 +438,13 @@ export class TradeKarmaChain {
   }
 
   async getStakingPosition(user: Address): Promise<StakingPosition> {
-    const [krune, kdex, startedAt, lastAccrued, accruedKshrd, active] = await this.publicClient.readContract({
+    const [krune, kdex, weight, startedAt, rewardPerWeightPaid, accruedUsdc, active] = await this.publicClient.readContract({
       address: requireAddress(this.addresses, 'staking'),
       abi: stakingAbi,
       functionName: 'positions',
       args: [user],
     });
-    return { krune, kdex, startedAt, lastAccrued, accruedKshrd, active };
+    return { krune, kdex, weight, startedAt, rewardPerWeightPaid, accruedUsdc, active };
   }
 
   /** Emergency-stops new stake() calls (unstake() is deliberately never pausable). Owner only. */
@@ -444,8 +485,8 @@ export class TradeKarmaChain {
   async depositFees(usdcAmount: string | number): Promise<Hash> {
     const wallet = this.writer();
     return wallet.writeContract({
-      address: requireAddress(this.addresses, 'treasury'),
-      abi: treasuryAbi,
+      address: requireAddress(this.addresses, 'staking'),
+      abi: stakingAbi,
       functionName: 'depositFees',
       args: [toUsdcUnits(usdcAmount)],
       account: wallet.account,

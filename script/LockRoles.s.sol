@@ -83,6 +83,9 @@ contract LockRoles is Script {
         require(address(staking.kshrd()) == address(kshrd), "LOCK: STAKING_ADDRESS is not wired to this KSHRD");
         require(address(treasury.kshrd()) == address(kshrd), "LOCK: TREASURY_ADDRESS is not wired to this KSHRD");
 
+        require(address(staking.treasury()) == address(treasury), "LOCK: Staking treasury mismatch");
+        require(kshrd.getRoleMemberCount(kshrd.MINTER_ROLE()) == 1, "LOCK: unexpected minter count");
+        require(kshrd.getRoleMemberCount(kshrd.BURNER_ROLE()) == 1, "LOCK: unexpected burner count");
         bytes32 minter = kshrd.MINTER_ROLE();
         bytes32 burner = kshrd.BURNER_ROLE();
 

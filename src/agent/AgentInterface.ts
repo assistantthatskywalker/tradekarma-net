@@ -1,3 +1,4 @@
+import type { SqliteEarningStore } from '../storage/SqliteEarningStore';
 /**
  * Agent-Agnostic Interface
  *
@@ -7,6 +8,8 @@
  * leak into this contract — only capabilities and typed payloads.
  */
 
+import { RequestValidator } from './RequestValidator';
+import { VerifiedEventStore } from '../logic/earning';
 import { User } from '../models/User';
 import { Transaction, TransactionLog } from '../models/Transaction';
 import { KarmaRuneLedger } from '../models/KarmaRune';
@@ -62,11 +65,24 @@ export interface PlatformState {
  * by `capability`, never by which model is calling. Swap GPT for Opus for a
  * local model and this contract is unchanged.
  */
+export interface AuthenticatedAgent {
+  agentId: string;
+  capabilities: AgentCapability[];
+  userIds: string[];
+  expiresAt: number;
+}
+
 export class AgentInterface {
-  constructor(private state: PlatformState) {}
+  private validator = new RequestValidator();
+  constructor(
+    private state: PlatformState,
+    private authenticate: (credential: string) => AuthenticatedAgent | undefined = () => undefined,
+    private verifiedEvents = new VerifiedEventStore(),
+    private persistentEarnings?: SqliteEarningStore
+  ) {}
 
   private requireUser(userId: string): User {
-    let user = this.state.users.get(userId);
+    const user = this.state.users.get(userId);
     if (!user) {
       throw new Error(`unknown user ${userId}`);
     }
@@ -83,16 +99,38 @@ export class AgentInterface {
     };
   }
 
-  handle(req: AgentRequest): AgentResponse {
-    // Capability gate — the agent must have declared the capability it invokes.
-    if (!req.agent.capabilities.includes(req.capability)) {
-      return { ok: false, error: `agent lacks capability ${req.capability}` };
-    }
-
+  handle(req: AgentRequest, credential = ''): AgentResponse {
     try {
+      const identity = this.authenticate(credential);
+      if (!identity || !Number.isFinite(identity.expiresAt) || identity.expiresAt <= Date.now()) {
+        return { ok: false, error: 'authentication required' };
+      }
+      if (!identity.capabilities.includes(req.capability) || !identity.userIds.includes(req.userId)) {
+        return { ok: false, error: 'capability or user access denied' };
+      }
+      // Rate limits key on the authenticated identity, never the request's claimed identity.
+      const checked = this.validator.validate({ ...req, agent: { ...identity, provider: 'authenticated' } });
+      if (!checked.valid) return { ok: false, error: checked.reason };
+      if (this.persistentEarnings) {
+        if (req.capability === 'read.reputation') return { ok: true, data: { balance: this.persistentEarnings.balance(req.userId) } };
+        if (req.capability === 'read.transactions') return { ok: true, data: this.persistentEarnings.transactions(req.userId) };
+        if (req.capability.startsWith('write.')) {
+          const proof = this.persistentEarnings.getVerifiedEvent(req.payload.eventId);
+          const types: Partial<Record<AgentCapability, string>> = { 'write.review': 'review', 'write.help': 'help', 'write.referral': 'referral', 'write.shipment': 'ship' };
+          const expectedType = types[req.capability];
+          if (!proof || proof.userId !== req.userId || proof.type !== expectedType) throw new Error('verified event ownership/type mismatch');
+          return { ok: true, data: this.persistentEarnings.award(proof.id) };
+        }
+        throw new Error('local staking simulation is disabled with persistent accounting; use the chain client');
+      }
       const user = this.requireUser(req.userId);
-      const ctx = { userId: req.userId, user, transactionLog: this.state.transactionLog };
-      const p = req.payload;
+      const proof = typeof req.payload.eventId === 'string' ? this.verifiedEvents.get(req.payload.eventId) : undefined;
+      const ctx = { userId: req.userId, user, transactionLog: this.state.transactionLog, evidence: proof };
+      // Earning parameters are loaded from trusted evidence; request fields cannot inflate rewards.
+      const p = req.capability.startsWith('write.') ? {
+        productId: proof?.subjectId, questionId: proof?.subjectId, referredUserId: proof?.subjectId,
+        orderId: proof?.subjectId, ...proof,
+      } as Record<string, any> : req.payload;
 
       // Every KRUNE award is mirrored into the ledger (Phase 1 dual bookkeeping).
       const award = (tx: Transaction): AgentResponse => {
@@ -100,6 +138,10 @@ export class AgentInterface {
         return { ok: true, data: tx };
       };
 
+      if (req.capability.startsWith('write.') &&
+          this.state.kruneLedger.get(req.userId) !== user.getReputation()) {
+        throw new Error('reputation ledgers require reconciliation');
+      }
       switch (req.capability) {
         case 'read.reputation':
           return { ok: true, data: { balance: user.getReputation() } };

@@ -88,7 +88,7 @@ contract Treasury is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice The same claim expressed in USDC base units — what this contract
+     * @notice MINTED claims only, expressed in USDC base units — what this contract
      *         would have to pay if every holder redeemed right now.
      * @dev Floored, which matches `redeem`: sub-unit KSHRD dust buys nothing, so
      *      counting it as debt would overstate the obligation.
@@ -98,7 +98,7 @@ contract Treasury is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice USDC held ÷ outstanding liability, 1e18-scaled. 1e18 is exactly
+     * @notice USDC held ÷ minted liability (excludes unminted rewards; see Staking.totalReservedUsdc()), 1e18-scaled. 1e18 is exactly
      *         collateralised; below that the treasury is insolvent.
      * @return type(uint256).max when nothing is owed — no finite ratio is
      *         meaningful against a zero denominator, and the caller should read

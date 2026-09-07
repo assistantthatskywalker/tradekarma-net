@@ -1,193 +1,80 @@
-/**
- * Immutable Transaction Archive
- * Append-only log with SHA-256 hash chain for tamper-evidence.
- * Version: hash259-v1
+import { types } from 'node:util';
+/** Local append-only archive. Roles must be resolved by the trusted server, not request fields.
+ * Hash chains alone cannot detect an operator rewriting history; retain signed checkpoints independently.
  */
-
-import { link } from './hash259';
-
-export interface ArchivedTransaction {
-  id: string;
-  userId: string;
-  type: string;
-  amount: number;
-  timestamp: Date;
-  hash: string;
-  prevHash: string;
+import { sign, verify as verifySignature, KeyObject } from 'node:crypto';
+import { link, HASH259_VERSION } from './hash259';
+import { assertAmount } from '../models/Ledger';
+export interface ArchivedTransaction { id: string; userId: string; type: string; amount: number; timestamp: Date; hash: string; prevHash: string }
+export enum AccessRole { SYSTEM = 'system', AUDITOR = 'auditor', ADMIN = 'admin', USER = 'user' }
+export interface ArchiveCheckpoint { version: string; count: number; head: string }
+function payload(tx: Omit<ArchivedTransaction, 'hash' | 'prevHash'>): string {
+  return JSON.stringify([tx.id, tx.userId, tx.type, tx.amount, tx.timestamp.toISOString()]);
 }
-
-export enum AccessRole {
-  SYSTEM = 'system', // Full access
-  AUDITOR = 'auditor', // Read-only access
-  ADMIN = 'admin', // Full access
-  USER = 'user', // Can read own transactions only
-}
-
 export class TransactionArchive {
   private transactions: ArchivedTransaction[] = [];
-  private lastHash: string = 'genesis';
-
-  /**
-   * Add transaction to archive with hash linkage (hash259 chain).
-   * Returns hash for verification.
-   */
-  append(
-    id: string,
-    userId: string,
-    type: string,
-    amount: number,
-    timestamp: Date
-  ): string {
-    const hash = link(
-      this.lastHash,
-      `${id}|${userId}|${type}|${amount}|${timestamp.toISOString()}`
-    );
-
-    const tx: ArchivedTransaction = {
-      id,
-      userId,
-      type,
-      amount,
-      timestamp,
-      hash,
-      prevHash: this.lastHash,
-    };
-
-    this.transactions.push(tx);
+  private lastHash = 'genesis';
+  private auditLog: Array<{ userId: string; role: AccessRole; action: string; timestamp: Date; allowed: boolean }> = [];
+  append(id: string, userId: string, type: string, amount: number, timestamp: Date): string {
+    assertAmount(amount);
+    if (![id, userId, type].every(x => typeof x === 'string' && x.length > 0) ||
+        !types.isDate(timestamp) || !Number.isFinite(timestamp.getTime()) || this.transactions.some(t => t.id === id)) throw new Error('invalid or duplicate archive record');
+    const tx = { id, userId, type, amount, timestamp: new Date(timestamp) };
+    const hash = link(this.lastHash, payload(tx));
+    this.transactions.push({ ...tx, hash, prevHash: this.lastHash });
     this.lastHash = hash;
-
     return hash;
   }
-
-  /**
-   * Verify hash chain integrity.
-   * Returns true if chain is unbroken.
-   */
-  verify(): boolean {
-    let prevHash = 'genesis';
-
-    for (const tx of this.transactions) {
-      if (tx.prevHash !== prevHash) {
-        return false; // Chain broken
-      }
-
-      const expectedHash = link(
-        tx.prevHash,
-        `${tx.id}|${tx.userId}|${tx.type}|${tx.amount}|${tx.timestamp.toISOString()}`
-      );
-
-      if (tx.hash !== expectedHash) {
-        return false; // Hash mismatch (tampered)
-      }
-
-      prevHash = tx.hash;
-    }
-
-    return true;
+  checkpoint(): ArchiveCheckpoint { return { version: HASH259_VERSION, count: this.transactions.length, head: this.lastHash }; }
+  signCheckpoint(privateKey: KeyObject): { checkpoint: ArchiveCheckpoint; signature: string } {
+    if (privateKey.asymmetricKeyType !== 'ed25519') throw new Error('Ed25519 key required');
+    const checkpoint = this.checkpoint();
+    return { checkpoint, signature: sign(null, Buffer.from(JSON.stringify(checkpoint)), privateKey).toString('base64') };
   }
-
-  /**
-   * Role-based access control.
-   * Check if user can read transaction.
-   */
+  verifySignedCheckpoint(checkpoint: ArchiveCheckpoint, signature: string, publicKey: KeyObject): boolean {
+    if (publicKey.asymmetricKeyType !== 'ed25519') return false;
+    return verifySignature(null, Buffer.from(JSON.stringify(checkpoint)), publicKey, Buffer.from(signature, 'base64')) && this.verify(checkpoint);
+  }
+  verify(expected?: ArchiveCheckpoint): boolean {
+    try {
+      let prev = 'genesis';
+      const ids = new Set<string>();
+      for (const tx of this.transactions) {
+        assertAmount(tx.amount);
+        if (ids.has(tx.id) || tx.prevHash !== prev || tx.hash !== link(prev, payload(tx))) return false;
+        ids.add(tx.id); prev = tx.hash;
+      }
+      return prev === this.lastHash && (!expected || (expected.version === HASH259_VERSION && expected.head === prev && expected.count === this.transactions.length));
+    } catch { return false; }
+  }
   canRead(userId: string, role: AccessRole, targetUserId: string): boolean {
-    if (role === AccessRole.SYSTEM || role === AccessRole.ADMIN) {
-      return true;
-    }
-    if (role === AccessRole.AUDITOR) {
-      return true; // Read-only access to all
-    }
-    if (role === AccessRole.USER) {
-      return userId === targetUserId; // Can only read own
-    }
-    return false;
+    return [AccessRole.SYSTEM, AccessRole.ADMIN, AccessRole.AUDITOR].includes(role) || (role === AccessRole.USER && userId === targetUserId);
   }
-
-  /**
-   * Get transactions with access control.
-   */
-  getTransactions(
-    userId: string,
-    role: AccessRole,
-    filter?: { userId?: string; type?: string }
-  ): ArchivedTransaction[] {
-    let result = this.transactions;
-
-    if (filter?.userId) {
-      result = result.filter((tx) => tx.userId === filter.userId);
-    }
-    if (filter?.type) {
-      result = result.filter((tx) => tx.type === filter.type);
-    }
-
-    // Apply access control
-    return result.filter((tx) => this.canRead(userId, role, tx.userId));
+  getTransactions(userId: string, role: AccessRole, filter?: { userId?: string; type?: string }): ArchivedTransaction[] {
+    const allowed = Object.values(AccessRole).includes(role) && (!filter?.userId || this.canRead(userId, role, filter.userId));
+    this.logAccess(userId, role, 'read transactions', allowed);
+    if (!allowed) return [];
+    return this.transactions.filter(tx => (!filter?.userId || tx.userId === filter.userId) &&
+      (!filter?.type || tx.type === filter.type) && this.canRead(userId, role, tx.userId)).map(tx => structuredClone(tx));
   }
-
-  /**
-   * Audit log: all access attempts.
-   * In production, this would be persisted separately.
-   */
-  private auditLog: Array<{
-    userId: string;
-    role: AccessRole;
-    action: string;
-    timestamp: Date;
-    allowed: boolean;
-  }> = [];
-
-  logAccess(
-    userId: string,
-    role: AccessRole,
-    action: string,
-    allowed: boolean
-  ): void {
-    this.auditLog.push({
-      userId,
-      role,
-      action,
-      timestamp: new Date(),
-      allowed,
-    });
+  logAccess(userId: string, role: AccessRole, action: string, allowed: boolean): void {
+    this.auditLog.push({ userId, role, action, allowed, timestamp: new Date() });
   }
-
   getAuditLog(role: AccessRole): typeof this.auditLog {
-    // Only SYSTEM and ADMIN can read audit log
-    if (role === AccessRole.SYSTEM || role === AccessRole.ADMIN) {
-      return this.auditLog;
-    }
-    return [];
+    return [AccessRole.SYSTEM, AccessRole.ADMIN].includes(role) ? structuredClone(this.auditLog) : [];
   }
-
-  /**
-   * Serialize archive to binary for backup.
-   * Format: transaction count + (each tx: id, userId, type, amount, timestamp, hash)
-   */
   serialize(): Buffer {
-    const buffers: Buffer[] = [];
-
-    // Header: archive version
-    buffers.push(Buffer.from('hash259-v1', 'utf-8'));
-    buffers.push(Buffer.from([0])); // Null terminator
-
-    // Transaction count
-    buffers.push(Buffer.allocUnsafe(4));
-    buffers[buffers.length - 1].writeUInt32BE(this.transactions.length, 0);
-
-    // Transactions
-    for (const tx of this.transactions) {
-      buffers.push(Buffer.from(tx.id, 'utf-8'));
-      buffers.push(Buffer.from([0]));
-      buffers.push(Buffer.from(tx.userId, 'utf-8'));
-      buffers.push(Buffer.from([0]));
-      buffers.push(Buffer.from(tx.type, 'utf-8'));
-      buffers.push(Buffer.from([0]));
-      buffers.push(Buffer.allocUnsafe(8));
-      buffers[buffers.length - 1].writeDoubleBE(tx.amount, 0);
-      buffers.push(Buffer.from(tx.hash, 'hex'));
-      buffers.push(Buffer.from(tx.prevHash, 'hex'));
+    return Buffer.from(JSON.stringify({ version: HASH259_VERSION, checkpoint: this.checkpoint(), transactions: this.transactions }));
+  }
+  static deserialize(data: Buffer, expected?: ArchiveCheckpoint): TransactionArchive {
+    const parsed = JSON.parse(data.toString('utf8'));
+    if (parsed.version !== HASH259_VERSION || !Array.isArray(parsed.transactions)) throw new Error('unsupported archive format');
+    const arc = new TransactionArchive();
+    for (const tx of parsed.transactions) {
+      if (tx.prevHash !== arc.lastHash) throw new Error('broken archive linkage');
+      if (arc.append(tx.id, tx.userId, tx.type, tx.amount, new Date(tx.timestamp)) !== tx.hash) throw new Error('archive digest mismatch');
     }
-
-    return Buffer.concat(buffers);
+    if (!arc.verify(parsed.checkpoint) || !arc.verify(expected)) throw new Error('archive checkpoint mismatch');
+    return arc;
   }
 }

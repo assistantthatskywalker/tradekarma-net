@@ -1,3 +1,4 @@
+import { assertAmount } from '../models/Ledger';
 /**
  * DAO Governance — KDEX-weighted proposals & voting.
  * 1 KDEX = 1 vote. The DAO is "earned": the platform starts centralized and
@@ -29,6 +30,8 @@ export interface Proposal {
 export class Governance {
   proposals: Map<string, Proposal> = new Map();
 
+  private snapshots = new Map<string, Map<string, number>>();
+
   constructor(private kdexLedger: KarmaDexLedger) {}
 
   createProposal(
@@ -40,6 +43,10 @@ export class Governance {
     quorum: number,
     now: Date = new Date()
   ): Proposal {
+    if (!id || this.proposals.has(id)) throw new Error("duplicate or missing proposal id");
+    assertAmount(durationMs, true); assertAmount(quorum, true);
+    if (!Number.isFinite(now.getTime())) throw new Error("invalid proposal date");
+    this.snapshots.set(id, new Map([...this.kdexLedger.balances].map(([user, b]) => [user, b.balance])));
     const proposal: Proposal = {
       id,
       title,
@@ -54,7 +61,7 @@ export class Governance {
       quorum,
     };
     this.proposals.set(id, proposal);
-    return proposal;
+    return structuredClone(proposal);
   }
 
   /**
@@ -69,10 +76,11 @@ export class Governance {
     const p = this.proposals.get(proposalId);
     if (!p) return { ok: false, reason: 'proposal not found' };
     if (p.status !== ProposalStatus.OPEN) return { ok: false, reason: 'proposal closed' };
+    if (!Number.isFinite(now.getTime()) || now < p.createdAt) return { ok: false, reason: "invalid voting time" };
     if (now >= p.closesAt) return { ok: false, reason: 'voting period ended' };
     if (p.voters.has(voterId)) return { ok: false, reason: 'already voted' };
 
-    const weight = this.kdexLedger.get(voterId);
+    const weight = this.snapshots.get(proposalId)?.get(voterId) ?? 0;
     if (weight <= 0) return { ok: false, reason: 'no KDEX voting power' };
 
     if (support) p.votesFor += weight;

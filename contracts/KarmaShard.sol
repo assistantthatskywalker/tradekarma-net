@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {AccessControlEnumerable} from "@openzeppelin/contracts/access/extensions/AccessControlEnumerable.sol";
 
 /**
  * @title KarmaShard ($KSHRD) — Yield Token
@@ -16,7 +16,7 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
  *      "only Staking can mint" claim above stops being a promise about a key
  *      and becomes a fact anyone can read off-chain state to verify.
  */
-contract KarmaShard is ERC20, AccessControl {
+contract KarmaShard is ERC20, AccessControlEnumerable {
     /// @notice Held by the Staking contract only.
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     /// @notice Held by the Treasury only — redemption destroys the shard.
@@ -72,6 +72,8 @@ contract KarmaShard is ERC20, AccessControl {
      */
     function lockRoles() external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(!rolesLocked, "KSHRD: roles already locked");
+        require(getRoleMemberCount(MINTER_ROLE) == 1 && getRoleMemberCount(BURNER_ROLE) == 1, "KSHRD: exactly one minter and burner required");
+        require(getRoleMember(MINTER_ROLE, 0) != getRoleMember(BURNER_ROLE, 0), "KSHRD: separate roles required");
         rolesLocked = true;
         emit RolesLocked();
     }

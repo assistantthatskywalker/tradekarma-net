@@ -101,6 +101,15 @@ contract StakingInvariantTest is Test {
     /// @notice The same statement from the Treasury's side: it always holds
     ///         every dollar it owes, so a redemption can never be refused for
     ///         want of USDC.
+    function invariant_allReservedClaimsAreFunded() public view {
+        assertTrue(staking.reservesCovered());
+        uint256 knownUnminted;
+        for (uint256 i = 0; i < actors.length; i++) {
+            knownUnminted += (staking.pendingKshrd(actors[i]) + staking.unclaimedYield(actors[i])) / staking.usdcScale();
+        }
+        assertGe(staking.unmintedReserveUsdc(), knownUnminted);
+    }
+
     function invariant_treasuryCoversItsOutstandingLiability() public view {
         assertGe(
             usdc.balanceOf(address(treasury)),

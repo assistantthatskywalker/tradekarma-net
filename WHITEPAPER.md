@@ -1,357 +1,121 @@
 # TradeKarma
 
-### Earn Your Reputation, Never Buy It
+## Reputation earned through verified commerce
 
-**White Paper — v3 (canonical)**
-**Basel, Switzerland · 2026**
-**tradekarma.net**
+Whitepaper v4 — 7 September 2026 · Basel, Switzerland
 
----
+## Status and scope
 
-## Abstract / Executive Summary
+TradeKarma is a development-stage reputation and rewards project. The deployed website describes the proposal and offers a waitlist when its database integration is configured. It is not a working marketplace, investment offering, or live staking application.
 
-TradeKarma is a reputation economy for e-commerce that pays people for being good. Write an honest, detailed review and you earn a token. Ship an order on time and you earn a token. Answer another buyer's question and you earn a token. These tokens are not a loyalty-points gimmick — they are the foundation of a three-token economy in which earned reputation, invested capital, and real revenue-backed yield are kept in separate, deliberately-designed lanes.
+The repository contains a TypeScript reference library, Solidity contracts, tests, deployment tooling, and documentation. It does not establish customer traction, profitable operations, regulatory approval, or independently audited mainnet deployments. Historical whitepapers and the original business plan are superseded by this document and docs/BUSINESS-MODEL.md.
 
-The system rests on a single, non-negotiable rule: **you cannot buy reputation.** The reputation token, KarmaRune ($KRUNE), enters the economy only through participation. There is no purchase path — not off-chain, not on-chain. A whale can buy every investment token on the market and still be locked out of the yield, because the yield gate requires earned reputation they do not have and cannot acquire with money. This is the mechanic everything else is built on, and it is enforced in code, not in prose.
+## The hypothesis
 
-We are building deliberately and in the correct order. Phase 1 runs the entire economy on a plain database — no wallets, no gas, no "connect your wallet." We prove that positive reinforcement actually changes behavior on a real marketplace before a single token touches a blockchain. Only when the model is proven do we migrate to ERC-20 tokens on Base, Coinbase's Ethereum Layer 2, using Coinbase Smart Wallet so ordinary users never see a seed phrase. We don't launch tokens to find out if the model works. **We prove the model works, then launch tokens.**
+Useful reviews, reliable fulfillment, and helpful answers can improve commerce. TradeKarma proposes rewards for verified contributions and asks merchants to pay for measurable benefits: lower fraud/support cost, better purchase decisions, and repeat customers.
 
-This document is the definitive specification of the TradeKarma economy: the three tokens and their jobs, the exact earning and staking mathematics as implemented in the codebase, the anti-whale gate, the tokenomics, the phased rollout, governance, the treasury, the tamper-evident audit archive, and our Swiss/FINMA-aware legal posture. Where an earlier draft and the code disagreed, the code won and this paper reflects it.
+These benefits must be measured against a control group. Rewarding activity can also encourage spam, collusion, and positive-review bias. Rewards should depend on verified usefulness, not favorable sentiment. No behavioral effectiveness or market-size claim is established by the current code.
 
----
+## Token roles and launch conditions
 
-## The Problem
+| Instrument | Proposed role | Current implementation and limits |
+| --- | --- | --- |
+| KRUNE | Non-transferable reputation | Authorized minting and holder-transfer rejection exist in Solidity. There is no burn/spending path. Issuer trust and account-control sales remain risks. |
+| KDEX | Optional capital participation and governance | Fixed genesis supply ERC-20. No implemented on-chain governance or vesting. Supply and distribution must be specified before issuance. |
+| KSHRD | Optional transferable claim on funded rewards | Minted at staking exit, redeemable for USDC. Adoption requires a demonstrated need for a separate claim token and legal clearance. |
 
-You can buy 500 five-star reviews on Amazon for a few hundred dollars. A buyer who spends 45 minutes writing a detailed, photo-backed, genuinely useful review gets nothing for it. Maybe a "verified purchase" badge. Maybe not even that.
+Reputation and spendable loyalty credits are separate concepts. Perk redemption must not burn KRUNE while staking relies on its non-decreasing balance. A separate loyalty-credit model is proposed but is not implemented here.
 
-This has been true for more than a decade, and nobody has fixed it, because the incentives are broken at a structural level. There is no cost to faking a review and no reward for writing a real one. The entire economics of online trust run backwards.
+Fixed supply does not guarantee demand, price appreciation, or investment returns. Neither KDEX nor KSHRD is necessary for the initial merchant pilot. Direct funded reward claims will be compared with a separate KSHRD instrument before token launch.
 
-It gets worse. A vendor who spends ten years building an excellent reputation on one platform starts again from zero on the next. Reputation is locked inside whatever silo you happened to build it in. There is no portable, verifiable proof that you are trustworthy. Switch platforms and you are a stranger again — and strangers get gamed.
+## Verified earning
 
-The standard industry response is punishment. Platforms hunt bad actors, ban them, and purge their reviews. This produces an arms race: sellers optimize to evade detection rather than to be genuinely good. The whole system is adversarial by design, and everyone can feel it.
+Agent requests do not establish their own identity, permissions, user access, purchase facts, or reward quality. A trusted server adapter must authenticate a credential and provide user-scoped capabilities with an expiry. A separate commerce adapter must verify evidence and register an immutable event ID. The supplied library fails closed without these adapters; it does not implement an identity provider, merchant order integration, or an AI fraud oracle.
 
-We want to try the opposite. Instead of building a better punishment machine, build a reward machine. Make the honest review worth something real. Turn the reliable vendor's reputation into an asset they actually own and can carry with them. Positive reinforcement has been studied since the 1960s, and the research is consistent: rewarding the behavior you want produces more durable change than punishing the behavior you don't. TradeKarma applies that finding to commerce.
+The earning engine accepts a verified event only once. Reviews and helpful answers are unique per participant/subject; shipment and referral subjects cannot be rewarded repeatedly under fresh event IDs.
 
----
-
-## Solution Overview
-
-TradeKarma is, first and last, a functioning marketplace. Strip away all three tokens and there is still a place where people buy and sell things, leave reviews, and resolve disputes. The token economy is a layer on top of a viable business — never the other way around. That ordering is the safety mechanism behind every design decision in this paper.
-
-Three principles shape everything:
-
-**Reputation is earned, never bought.** KarmaRune is the one rule we will not compromise. If reputation can be purchased, the whole system collapses into pay-to-win with extra steps. Every mechanic downstream is designed around this constraint.
-
-**Yield comes from revenue, or it does not come at all.** The treasury that backs the yield token is funded by transaction fees and vendor subscriptions — actual money that actual people paid for actual services. If the marketplace does not generate revenue, the yield pool is empty and no yield is generated. We would rather show an honest "yield is not available yet" than a fabricated APY funded by the next investor buying in. We all watched what happened to the projects that did the latter.
-
-**Prove first, tokenize second.** We start with a plain points system on a database. If positive reinforcement does not measurably improve review quality and marketplace health when it is just numbers in Postgres, no blockchain will save it. Only a proven model earns the right to become tokens.
-
-The architecture is layered so the same core logic serves both worlds. A provider-agnostic API sits above the earning and staking logic; the logic sits above the data models; and in Phase 2 the database models are swapped for on-chain contracts behind the identical interface. In Phase 1 the reference implementation is TypeScript in strict mode with a full test suite covering every load-bearing invariant — the anti-whale rejection, tamper detection, and diminishing-returns earning each have a test that fails if the rule breaks.
-
----
-
-## The Three Tokens
-
-Most token projects use one token for everything: currency, reward, governance vote, and investment vehicle all at once. These jobs conflict. People hoard a "utility" token hoping it appreciates, which breaks its utility; speculation on the reward token distorts the behavior it was supposed to encourage. TradeKarma splits the functions into three tokens that never blur into one another.
-
-| Token | Ticker | Job | How you get it | Supply |
-|-------|--------|-----|----------------|--------|
-| **KarmaRune** | $KRUNE | Reputation. Proof you participated and contributed. | **Earned only** — reviews, helpful answers, referrals, on-time shipping. **Never purchasable.** | Minted as earned; sinks via spending |
-| **KarmaDex** | $KDEX | Investment + governance. The token you buy if you believe in the project. | Bought on a DEX (Uniswap on Base). | **Fixed supply**, minted once |
-| **KarmaShard** | $KSHRD | Yield. What you get when earned reputation meets invested capital. | Generated by **staking KRUNE + KDEX together.** Redeem for USDC; a KDEX path exists, off by default. | Accrues from real fee revenue; treasury-backed |
-
-### KarmaRune ($KRUNE) — reputation, earned only
-
-KRUNE is your track record. It accumulates as you do good things on the platform and it can **never be bought.** This is enforced structurally, at both ends of the token's life, not by policy. On the way in: off-chain there is no endpoint that accepts money in exchange for KRUNE, and on-chain `KarmaRune.sol` is an ERC-20 with **no payable function anywhere** and no public mint — tokens can be created only by a designated `MINTER`, the earning engine, through a single `mintEarned` function, and every mint carries a `reasonHash` linking it back to the specific off-chain earning event (the review, the shipment, the referral) for auditability. On the way across: KRUNE is **soulbound**. `KarmaRune.sol` rejects every holder-to-holder movement — `transfer`, `transferFrom`, and `approve` all revert — so there is no OTC deal, no DEX pool, and no lending market where reputation could change hands for money once it exists. There is no back door, because there is no door at all, in either direction. You spend KRUNE on platform perks (discounts, visibility boosts), or you keep it in your wallet and stake it — staking **references** your KRUNE balance rather than moving it, so your reputation never actually leaves your wallet, even while it is earning yield.
-
-### KarmaDex ($KDEX) — investment and governance, fixed supply
-
-KDEX is what investors interact with. It has a **fixed supply**, minted exactly once at contract construction and distributed; `KarmaDex.sol` declares `totalSupply` as `immutable` and exposes no mint function, so no more can ever be created. It trades freely on a DEX — Uniswap on Base — and it carries governance voting power. Because it is deliberately walled off from the reputation layer, speculation on KDEX price cannot leak into and distort the behavioral incentives that drive KRUNE. If TradeKarma grows, demand for the fixed KDEX supply grows; that is the honest investment thesis, and it is kept structurally separate from the act of earning reputation.
-
-### KarmaShard ($KSHRD) — yield, from both halves together
-
-KSHRD is the bridge between the two, and it exists only where earned reputation and invested capital meet. To generate it, you pair your earned KRUNE with purchased KDEX in the staking contract: KDEX is transferred in and held by the contract, while KRUNE — being soulbound — stays in your wallet and is referenced instead. You need both. A hedge fund that buys millions of dollars of KDEX but has never used the platform cannot stake — it has no KRUNE. A power user with a huge KRUNE balance but no financial skin in the game cannot stake either — it has no KDEX. KSHRD accrues as a **share of the USDC fees the platform actually collects**, weighted by the *geometric mean* of the two staked amounts, and it is redeemable from the treasury for USDC. A KDEX redemption path with a keepback bonus is built into the contract but ships **off by default**, pending a governance vote once a real KDEX market exists to price it safely. The details of both the accrual and the redemption follow below.
-
----
-
-## Earning Mechanics
-
-The earning engine is live in the codebase (`src/logic/earning.ts`) and its behavior is exact and testable. The specific coefficients will be tuned during Phase 1 against real data, but the *structure* is fixed, and it is built to make honest participation cheaper than farming.
-
-### The diminishing-returns base curve
-
-Every review starts from a logarithmic base reward that shrinks as you repeat the same action. The formula, verbatim from the code, is:
+For reviews:
 
 ```
 base(n) = 10 / log2(n + 2)
+quality = min((photos ? 2 : 1) * (textLength > 200 ? 1.5 : 1) * (detailed ? 1.3 : 1), 5)
+reward = round(base(n) * quality * (firstReviewOnProduct ? 3 : 1))
 ```
 
-where `n` is how many reviews you have already written. Your first review earns a base of **10** KRUNE. Your second earns about **6.3**. Your fiftieth earns about **1.8**. The curve is deliberately concave: the Nth action always earns less than the one before it. This is the core anti-farming device. Grinding out volume gets you steadily diminishing rewards, so you cannot buy reputation with sheer repetition any more than you can buy it with a credit card.
+The present inputs permit a maximum quality factor of 3.9, below the configured 5 cap. A new user's first detailed photo review on an unreviewed product earns 117 KRUNE. The first-review premium is additional to the quality cap. The formula alone does not make farming uneconomic.
 
-### Quality multipliers (capped at 5×)
+Helpful verified answers earn 5 KRUNE. Referrals earn 30 only after evidence of 90 days of activity, never for self-referrals. Shipment rewards are 0.1 KRUNE per unit of order value, rounded and capped at 100, with half the reward after three days. The merchant integration must establish the currency normalization, genuine order, account relationship, fulfillment facts, refunds, and minimum purchase rules before production earning.
 
-Base reward is only the starting point. What you actually receive depends on what you put into the review. The quality multiplier stacks three factors and is then hard-capped:
+## Staking mathematics
 
-| Signal | Effect |
-|--------|--------|
-| Includes photos | × 2 |
-| Substantial text (over 200 characters) | × 1.5 |
-| Detailed / specific (usage context, comparisons) | × 1.3 |
-| **Maximum combined multiplier** | **× 5 (hard cap)** |
-
-A throwaway "great product, fast shipping" review earns its small base and nothing more. A detailed review with photos and real usage context can earn several times as much — but never more than five times the base, no matter how many signals it hits. Quality scoring is AI-assisted but transparent: the criteria are public, and a user can see why their review received the multiplier it did.
-
-### First-review premium (3×)
-
-Every marketplace has the same gap: popular products drown in reviews while niche products have none, leaving the buyer of the niche product with nothing to go on. TradeKarma fixes this with a coverage bonus. The **first** review on a product earns a **3× multiplier**; once a product already has reviews, subsequent reviews earn the standard 1×. This pushes KRUNE toward the corners of the marketplace that need coverage most, and the incentive self-balances — as coverage fills in, the premium naturally moves to the next underserved product.
-
-### How a review reward is computed
-
-The three factors combine multiplicatively and the result is rounded:
+Staking requires positive KRUNE and KDEX. KRUNE stays in the wallet and is referenced; KDEX is escrowed. One position exists per wallet. Top-ups cannot reuse already referenced KRUNE and reset the 90-day lock on the entire position. There is no early exit or partial withdrawal.
 
 ```
-reward = round( base(n) × qualityMultiplier × firstReviewBonus )
+weight = floor(sqrt(kruneBaseUnits)) * floor(sqrt(kdexBaseUnits))
+SCALE = 10^18
+pool = depositedUsdcBaseUnits + unallocatedFees
+delta = floor(pool * SCALE / totalWeight)
+allocated = ceil(delta * totalWeight / SCALE)
 ```
 
-A first-ever review on a product, written with photos and detail by a new reviewer, might compute as `10 × (up to 5) × 3` before rounding — the strongest possible signal the system recognizes. A twentieth generic one-liner on a saturated product computes to a low single-digit number. The math rewards exactly the behavior we want: substantive, first-hand, coverage-expanding contributions.
+Each position checkpoints the global reward accumulator before changing weight. Yield is a share of transferred fee tokens, never a fixed annual return. No deposits means no additional rewards, regardless of elapsed time. Rounding can leave small amounts reserved but unattributable.
 
-### Other earning actions
+Fees arriving without active stakes are carried to the next allocation. That allocation can be triggered with a zero-value deposit by a newly eligible staker. This is an explicit current allocation rule, not proven fair; epoch allocation or a separate prelaunch reserve must be evaluated before launch.
 
-The engine rewards more than reviews:
+The TypeScript staking module is a local simulation using whole reputation/capital amounts and integer USDC base units. Its cash ledger is not a real payment processor. Solidity operates with token base units and real transfers.
 
-- **Helpful answers.** Answering another buyer's question earns a flat **+5 KRUNE**, recorded as a retroactive-help event.
-- **Referrals.** A successful referral earns **30 KRUNE** — and it only pays out once the referred user has stayed genuinely active for **90 days**, so sharing a link that goes nowhere earns nothing.
-- **On-time shipping (vendors).** Vendors earn on fulfillment quality, scaled to order value at **0.1 KRUNE per $1, capped at 100 KRUNE** per order. On-time means shipped within **3 days**; a late shipment earns **half**. Vendors are rewarded for how well they run the shop, not for how much they sell.
+## Limits of the participation gate
 
-Because the base curve diminishes, the quality multiplier is capped, and referrals require proof-of-realness, the cost of gaming the system with fake accounts stays high while the reward for honest participation stays accessible. That asymmetry — honest participation cheaper than farming — is the target the whole engine is tuned toward.
+The design blocks capital with zero reputation; it does not prevent concentration once reputation is positive. With two participants, 500 KRUNE/500 KDEX has weight 500, while 20 KRUNE/1,000,000 KDEX has weight approximately 4,472. The latter receives approximately 89.9% of that pool.
 
----
+Non-transferable tokens do not stop account sales, rented wallet control, bribed issuers, or paid farming. Account splitting can reset earning histories. Identity, eligibility age, fraud detection, appeals, and reputation-linked capital limits require evidence and simulation. No claim of unconditional whale or Sybil resistance is made.
 
-## Staking & Yield
+## Treasury and redemption
 
-Staking is where earned reputation and invested capital finally combine to produce revenue-backed yield. The logic is implemented in `src/logic/staking.ts` for Phase 1 and mirrored on-chain in `Staking.sol` for Phase 2.
+Fees enter through Staking.depositFees(), which transfers USDC to Treasury. Treasury has no depositFees() function. Deposits must transfer the stated amount; fee-on-transfer assets are rejected. Standard deployed KRUNE/KDEX/KSHRD and a verified USDC deployment are required.
 
-### How a stake works
+After 90 days, unstake() returns escrowed KDEX. Earned rewards are minted as KSHRD. If that mint fails, principal still returns and the reward is recorded for a later claimYield(). The user approves Treasury to burn KSHRD, then calls redeem() from their own wallet. Treasury burns only the amount paid for and retains sub-USDC-unit dust in the holder's balance.
 
-Suppose you have used TradeKarma for six months. You have written reviews, answered questions, and referred a few friends, and you have accumulated 500 KRUNE. You also believe in the project, so you bought 500 KDEX on Uniswap. You go to the staking page and open a position with **both** amounts. Because KRUNE is soulbound, the contract cannot take custody of it — it **records** your 500 KRUNE as the reputation half of the position and leaves it in your wallet; only your 500 KDEX is actually transferred in. From that moment your position begins accruing KarmaShard.
+One whole KSHRD redeems for one whole USDC under normal token operation; this is not a guarantee that USDC equals a dollar or is always transferable. USDC issuer actions, token upgrades, chain outages and depegs are external risks.
 
-The position is locked for **90 days**, and the lock is hard: there is no early exit. `unstake()` reverts until the 90 days are up — there is no partial withdrawal and no forfeit-the-yield escape hatch. We would rather say that plainly than have you discover it on day one: once your KDEX is staked, it is unavailable until the lock matures. Topping up an existing position restarts the 90-day clock on the **whole** position, not just the new amount — a deliberate choice that closes a real exploit where a seasoned dust-sized position could otherwise be topped up with real capital and unlocked within seconds. When the lock matures, `unstake()` returns your KDEX in full (your KRUNE was never moved, so there is nothing to return for it) and you can redeem the accrued KSHRD for USDC, covered under Treasury & Redemption.
+Treasury.totalOutstandingLiability() counts minted claims only. Staking.totalReservedUsdc() additionally includes conservative unminted allocations and carried fees. These reserves are not operating cash. The accumulator proves receipt of tokens, not that deposits represent profitable merchant revenue; anyone can deposit.
 
-### The geometric-mean yield curve
+The optional KDEX conversion ships disabled. Its owner-set rate and 10% bonus are not a manipulation-resistant market-price system. It must remain disabled until governance, price freshness, payout limits, slippage protection, and a subsidy budget are implemented and reviewed.
 
-Your **weight** in the yield pool is not the sum of your tokens, and not either token alone. It is the **geometric mean** of the two staked amounts:
+## Settlement and cryptographic integrity
 
-```
-weight = sqrt(KRUNE_staked × KDEX_staked)
-```
+Settlement uses a domain-separated replay key derived from the chain, KRUNE contract, schema namespace, and immutable event ID. The outbox separately commits to the user, recipient wallet, amount, event type, and timestamp. The KRUNE contract records the recipient/amount digest. A trusted wallet resolver must bind the user to a verified wallet; callers cannot substitute a recipient.
 
-Weight decides your *share* of the pool, not a rate — there is no fixed percentage that converts weight into KSHRD. Every time the treasury actually receives USDC fees, that deposit is split across every active position in proportion to weight, and each position's claim accumulates from there. On-chain, `Staking.sol` implements this with a standard accumulator pattern (the same one used by Synthetix's `StakingRewards`): a running `rewardPerWeight` value that increases only when fees are deposited, with each position tracking where that value stood the last time it was paid. No fees deposited means the accumulator does not move, and nobody's weight — however large — earns anything from revenue that was never collected.
+Broadcast, receipt, and finality are distinct. A matching digest in finalized chain state is required for confirmation. A durable SQLite outbox adapter is supplied for a Node 24 process on persistent storage. In-memory stores remain test/reference components. This adapter must not be placed on an ephemeral serverless filesystem. Production accounting, recovery operations, multi-worker nonce management, and merchant reconciliation still require service integration.
 
-The geometric mean is the mathematical heart of the anti-whale design, and it is worth seeing why. Consider three stakers:
+The legacy name hash259 denotes standard SHA-256 with a versioned format; it is not a novel cryptographic algorithm or additional security bits. Archive v2 uses unambiguous structured records, length-prefixed hash links, detached reads, access logging, complete timestamp-preserving backups, and optional Ed25519-signed checkpoints.
 
-- **Balanced participant:** 500 KRUNE, 500 KDEX → √(250,000) = **500** units of productive stake.
-- **All money, little reputation:** 20 KRUNE, 500 KDEX → √(10,000) = **100**.
-- **All reputation, little money:** 500 KRUNE, 20 KDEX → √(10,000) = **100**.
+A hash chain without an independently retained checkpoint cannot detect an operator rewriting the whole history. Checkpoint signing keys and independently retained checkpoints must be operated separately from mutable storage. Role arguments to archive methods are trusted-server inputs, not public authorization credentials. The archive is not encryption and does not prove that the original business facts were true.
 
-The geometric mean is symmetric and it punishes imbalance. Piling on capital without earning matching reputation barely moves your share of the pool, and vice versa. The function is maximized only when both halves grow together — precisely the profile of a committed, honest, long-term participant. And in the limiting case that matters most: **if either amount is zero, the geometric mean is zero.** No KRUNE means no share of the pool, mathematically, even before the gate stops you.
+## Administrative power and recovery
 
----
+KRUNE minting remains a trusted issuer capability. Compromise can inflate reputation and dilute other participants' funded reward shares. Deployment, earning, and administrative keys must be separate. Admin authority should be held by an independently operated multisig; the code does not prove signer independence.
 
-## The Anti-Whale Mechanic
+KSHRD roles can be sealed irreversibly after wiring. The seal requires exactly one minter and one burner with separate addresses. Deployment verification must establish that those addresses are the reviewed Staking and Treasury contracts. Sealing prevents later role rotation; it is not a substitute for a migration and incident plan.
 
-This is the mechanic everything else is built on, so it gets its own section.
+Staking pause stops new stakes. It does not stop mature principal exits or funded fee deposits. Treasury redemption is not pausable. Contracts are non-upgradeable. Recovery, emergency controls, governance and migration choices must be settled before mainnet deployment.
 
-**A whale with $10 million of KDEX and zero earned KRUNE cannot stake, cannot generate KSHRD, and cannot touch the yield.** Full stop. They can buy every KDEX on the open market; it does not matter. Yield requires *both halves*, and the reputation half cannot be bought at any price.
+## Business and launch gates
 
-This is enforced twice over. First, the **anti-whale gate** is an explicit check that runs before any stake is opened. In `staking.ts`, `checkAntiWhaleGate` returns a hard refusal if the user's KRUNE balance is zero — *"No earned reputation (KRUNE). You must participate first."* — and an equally hard refusal if their KDEX balance is zero — *"No investment tokens (KDEX). You must believe in the project."* On-chain, `Staking.sol` enforces the same rule with two `require` statements at the top of the `stake` function:
+The pilot charges merchants for verified commerce value. Subscription and transaction prices are hypotheses to test. Reward allocations should come from distributable surplus after refunds, payment costs, fraud/support costs, taxes, operations, and required reserves. Token-sale proceeds are financing, not evidence of operating demand.
 
-```solidity
-require(kruneAmount > 0, "STAKE: need earned KRUNE (reputation)");
-require(kdexAmount > 0, "STAKE: need invested KDEX (capital)");
-```
+Launch sequence:
 
-A transaction that tries to stake with zero KRUNE simply reverts. Second, even if the gate were somehow bypassed, the **geometric-mean yield curve** makes the attack pointless: √(0 × millions) = 0. Zero reputation yields zero KSHRD by construction.
+1. Correctness, adversarial tests, reproducible artifacts, and secure evidence/authentication integrations.
+2. Durable merchant accounting, reconciliation, backups, incident drills, and a paid merchant pilot.
+3. Independently measured customer value, retention, fraud loss, and positive contribution margins.
+4. Economic simulations and a documented necessity test for every proposed token.
+5. Scoped legal clearance, independent contract/security review, remediation retest, and verified deployment.
 
-The reverse is equally true and equally deliberate. A user who has earned 50,000 KRUNE over years of helpful participation but refuses to put up any capital cannot stake either — they have no KDEX. The system does not privilege money over labor or labor over money. It requires both, together, every time. That symmetry is the whole point: yield is the reward for *aligned* commitment, capital that stands behind reputation and reputation that has skin in the game.
+## Legal and external evidence
 
-The consequence is that the most dangerous actor in most token economies — the whale who buys their way to the top of the yield stack — is structurally disarmed here. They can invest. They can hold. They can vote with their KDEX. But they cannot extract yield without doing the one thing money cannot do for them: earning a reputation, action by honest action, over time.
+Token treatment depends on economic function and the actual offering, not project labels. KDEX participation in income streams and KSHRD redemption require design-specific Swiss legal assessment; KRUNE's involvement in financial benefits must also be assessed. Direct payouts or token-to-token redemption are not assumed exemptions. Other markets require their own review.
 
----
+Primary reference: [FINMA ICO guidelines](https://www.finma.ch/en/news/2018/02/20180216-mm-ico-wegleitung/) and [FINMA stablecoin guidance](https://www.finma.ch/en/news/2024/07/20240726-m-am-06-24-stablecoins/). These sources describe regulatory principles, not approval of TradeKarma.
 
-## Tokenomics & Supply / Distribution
-
-The three tokens have three different supply models, matched to their three jobs.
-
-| Token | Supply model | Created by | Reduced by |
-|-------|--------------|------------|------------|
-| $KRUNE | Elastic, earned-only | `mintEarned` (earning engine only) | Spending on perks |
-| $KDEX | **Fixed**, minted once | Genesis mint at construction | (Optional DAO-governed fee burns) |
-| $KSHRD | Accrues from real fee revenue; treasury-backed | Pool-share accrual, geometric-mean weighted | Redemption against treasury |
-
-**KRUNE** has no fixed cap because it is a measure of cumulative good behavior, not a scarce investment. It expands as the community participates and contracts as members spend it on discounts, visibility, and other perks. Its value is not speculative; it is a credential.
-
-**KDEX** is the fixed-supply investment token. The reference deployment mints **100,000,000 KDEX** once, to the treasury, for structured distribution. An illustrative distribution — subject to legal review and final board approval before any launch — allocates the fixed supply across the constituencies that build and sustain the network:
-
-| Allocation | Share | Purpose |
-|------------|-------|---------|
-| Community & ecosystem rewards | 40% | Long-term incentives for participants and vendors |
-| Team (multi-year vesting) | 20% | Founders and core contributors, vested over time |
-| Treasury / reserve | 15% | Runway, buybacks, contingency |
-| Liquidity provision | 15% | DEX liquidity on Base (Uniswap) |
-| Investor round | 10% | Small early raise to fund development and legal |
-
-Because the supply is fixed and immutable, none of these allocations can be inflated after the fact. Team tokens vest over multiple years to align incentives with the long build.
-
-**KSHRD** is not pre-minted. It comes into existence only as staked positions claim their share of USDC fees the treasury has actually received, through the pool-share accumulator described under Staking & Yield, and it is retired when redeemed against the treasury. Because every unit of KSHRD is minted against a unit of USDC that was already deposited, outstanding KSHRD can never exceed USDC actually received as fees — that is a structural property of how the token is minted, not a policy we are asking you to trust. It cannot be conjured from nothing, which is the specific failure mode that destroyed earlier "high-APY" tokens.
-
-Revenue that funds the economy comes from platform fees: transaction commissions on trades, vendor listing subscriptions, premium features, and (in later phases) protocol fees from external platforms that integrate TradeKarma reputation. Revenue is split across operations, the yield pool, KDEX buybacks, and reserves, and the share allocated to the yield pool is exactly what the treasury deposits into the staking accumulator. There is no separate switch that holds the pool at 0% below some threshold — there does not need to be one. **If the platform is not yet generating meaningful fee revenue, the accumulator has nothing to distribute, and staked positions earn nothing no matter how large they are.** A yield pool split among a handful of users produces a number close to zero because there is close to nothing to split, not because a policy says so. Yield activates as an arithmetic consequence of real economic activity, not before it.
-
----
-
-## Phased Rollout
-
-We are not launching three tokens at once. That would be reckless. Each phase has to earn the next.
-
-### Phase 1 — Database points, no blockchain (now)
-
-Phase 1 is a real e-commerce marketplace with a points system running entirely on a database. Users see and earn "Karma" for the behaviors we want to encourage and spend it on benefits. There are no wallets, no gas fees, and nothing to connect. From a crypto perspective it is intentionally boring — it looks like a loyalty program, and that is exactly right.
-
-The purpose is to answer the only question that matters before tokenizing: **does positive reinforcement actually change behavior on a real marketplace?** Does review quality rise? Do vendors respond faster? Do people stay longer? Because everything is in a database, we can adjust earning rates and spending options in minutes and measure the result — iteration that becomes nearly impossible once economics are on-chain and gated behind governance votes and contract upgrades. The reference implementation for this phase already exists: the earning and staking logic, models, archive, and governance are implemented in TypeScript under strict typing with a full test suite. The motto of this phase is literal: **prove the model, then launch tokens.** If Phase 1 fails, we learned it cheaply and no token was ever issued.
-
-### Phase 2 — Two tokens on-chain (Base)
-
-When the model is proven, KRUNE migrates from the database to an **ERC-20 on Base**, Coinbase's Ethereum Layer 2. Users receive a **Coinbase Smart Wallet** tied to their email — **no seed phrases** to write down and lose — and their accumulated points convert to on-chain KRUNE. The migration is a milestone worth marketing: *your reputation is now yours, portable, and on-chain.* Transactions on Base cost roughly a cent, and Swiss users can fund a wallet through Coinbase with a bank transfer, so the crypto machinery stays invisible to people who never wanted to think about it.
-
-KDEX launches alongside, with its fixed supply distributed as above and liquidity on Uniswap (Base). In this phase the two tokens coexist but do not yet mechanically interact — both simply accumulate while the marketplace generates revenue into a multi-signature treasury and we watch whether on-chain KRUNE behaves like the off-chain points did and whether organic KDEX demand appears.
-
-### Phase 3 — Yield and the open protocol
-
-Phase 3 turns on KSHRD generation: the staking contract goes live, users pair earned KRUNE with purchased KDEX, and the treasury begins paying real, revenue-backed yield. There is no rate to switch on — because yield is a direct share of the USDC fees actually deposited, a platform with thin fee revenue produces a thin (or zero) yield pool automatically, with no policy lever required to hold it down. We time Phase 3's launch to when fee revenue is real and consistent, so the yield stakers see on day one reflects the business rather than a number someone picked. In this phase governance progressively hands parameters to the DAO, and the long-term protocol vision comes into view — an open reputation layer that other marketplaces can integrate, so that reputation earned in one place is recognized in another.
-
-```
-Phase 1                  Phase 2                   Phase 3
-Karma points             KRUNE on-chain (Base)     KSHRD yield active
-(database, no crypto)    KDEX launches (fixed)     Staking: KRUNE + KDEX
-                         Treasury accumulates      DAO governs · open protocol
-
-1 token (points)   -->   2 tokens (on-chain)  -->  3 tokens (full economy)
-Prove behavior     -->   Prove investment     -->  Prove yield
-```
-
-Each phase justifies the next. If points do not change behavior, there is no blockchain. If the marketplace does not generate revenue, there is no yield. The tokens earn their existence.
-
----
-
-## Governance & the DAO
-
-Governance runs on KDEX, and it is intentionally kept separate from the reputation layer. In the reference implementation (`src/dao/Governance.ts`), voting weight is **1 KDEX = 1 vote**. Proposals have a defined voting window and a **quorum** — a minimum total KDEX weight that must participate for the result to count — and pass by **simple majority** of the votes cast. One address votes once per proposal.
-
-Notably, **KRUNE does not vote.** This is a deliberate design choice, and it reverses what earlier drafts assumed: governance is a capital-and-belief function, so it is denominated in the capital-and-belief token, while reputation is kept purely as the behavioral currency and the yield key. Blending them would drag reputation-farming incentives into governance and governance-capture incentives into reputation. Keeping them apart protects both.
-
-The DAO is *earned*, the same way KRUNE is. A three-person founding team cannot govern by committee, and a DAO of a few hundred early users would be governance theater. So the platform starts centralized and hands over control progressively as the community demonstrates it can hold it. Early on, token holders vote on parameters like earning rates, vendor categories, and feature priorities, while the founder retains authority over contract upgrades, treasury withdrawals, and terms of service. Over time, authority migrates to a DAO timelock and an elected council handles day-to-day execution.
-
-Full handover is gated by strict conditions: multiple years of stable operation, zero critical security incidents, a demonstrated track record of the DAO governing well, a treasury that has covered expenses for six or more consecutive months, and a community supermajority vote (75%+) approving the transition. We do not hand over the keys until the system has proven it can run without us.
-
----
-
-## Treasury & Redemption
-
-The treasury is what makes the yield real. It holds USDC and KDEX funded by actual platform fees, and it is the counterparty that backs every KSHRD redemption. In production it is a multi-signature wallet; the reference `Treasury.sol` collects fees via `depositFees` and pays out redemptions only when called by the authorized staking flow.
-
-When a matured stake is redeemed, the holder chooses one of two paths:
-
-| Path | What you receive |
-|------|------------------|
-| **KSHRD → USDC** | Baseline **1 KSHRD ≈ 1 USDC**, paid from the treasury's USDC reserve to your wallet. Live from launch. |
-| **KSHRD → KDEX** | KDEX equal to your KSHRD value **plus a +10% keepback bonus** (`KDEX_KEEPBACK_BONUS_BPS = 1000`), paid from the treasury's KDEX reserve. **Governance-gated, off by default** until a real KDEX market exists. |
-
-The USDC path is the straightforward cash-out, and it is the only path live at launch. The KDEX path is designed to solve a structural problem: if USDC were the only exit, every redemption would drain the treasury and value would leak out of the system through a one-way valve. Redeeming as KDEX is meant to pay a **10% bonus** — more value for choosing to keep it inside the ecosystem — but that bonus only makes sense at a price the treasury can afford, and there is no reliable, manipulation-resistant KDEX price yet. So the branch ships **disabled**: it reverts until governance sets a rate and turns it on. We would rather launch with one exit that is honestly priced than two, one of which is not. Once a real KDEX market exists, governance can enable the branch and put the recirculation incentive to work.
-
-Redemption is always bounded by what the treasury actually holds — the contract will not pay USDC it does not have, nor KDEX it does not have. But that balance check by itself is not what makes KSHRD solvent; a balance check only decides who gets paid first if the treasury ever runs short, which is a bank run, not a guarantee. The real guarantee sits one layer upstream, in how KSHRD is minted in the first place: because the pool-share accumulator (see Staking & Yield) only ever allocates USDC that has already been deposited, outstanding KSHRD cannot exceed USDC actually received as fees — solvency is a property of how the token is created, not of who redeems fastest. If revenue falls, the accumulator simply stops moving, new KSHRD stops accruing, and outstanding KSHRD retains its full backing. The system degrades gracefully to a reputation-only economy in which KRUNE and the marketplace still work. The yield can never promise more than the business earned, and now it structurally cannot.
-
----
-
-## Security & the Immutable Archive
-
-Trust in a reputation system depends on the reputation record being tamper-proof. TradeKarma's answer is **hash259**, a versioned, content-addressed, tamper-evident, role-gated audit archive implemented in `src/archive/`.
-
-**What hash259 is.** The name is TradeKarma's internal label for the scheme: SHA-256 (32 bytes / 256 bits) plus a one-byte version tag — 259 addressing bits — giving a forward-compatible envelope (`hash259-v1`). The scheme is **one-way by construction** (you cannot recover content from a digest) and **read-only by construction** (the archive stores digests and links; it exposes no way to mutate a sealed record).
-
-**How tamper-evidence works.** Every transaction is written to an append-only log and **hash-linked** to the one before it: each record's hash is computed over its own contents concatenated with the previous record's hash. This chains the entire history together. Change any single earlier record — alter an amount, backdate a timestamp, delete a review — and its hash changes, which breaks the link every later record depends on, cascading a mismatch through the rest of the chain. The archive's `verify()` walks the chain from genesis and returns false the moment a `prevHash` or a recomputed hash fails to match. There is no way to quietly rewrite history; any edit is detectable.
-
-**Role-gated reads.** Access is controlled by role. **SYSTEM** and **ADMIN** have full access; an **AUDITOR** has read-only access to the entire archive (so an external reviewer can verify integrity without any ability to alter it); a **USER** can read only their own transactions. Every access attempt is written to a separate audit log that only SYSTEM and ADMIN can read. The archive also serializes to a compact binary format for backup, headed by its version tag.
-
-**On-chain and contract security.** In Phase 2, the same guarantees are inherited from Base, which settles to Ethereum. The contracts are minimal and auditable: KRUNE has no payable path, mints only via an authorized minter, and cannot be transferred between holders once minted; KDEX has an immutable fixed supply and no mint function; the staking contract enforces the anti-whale gate with `require` statements and returns principal only after the lock; the treasury pays out only what it holds and only to the authorized staking flow.
-
-Role administration on the two mintable tokens is handled differently, on purpose. **KarmaShard**'s role table is sealed at deployment: once the deploy wiring is verified, `lockRoles()` is called once, irreversibly, and after that call not even the admin key can grant itself minting rights or touch KarmaShard's roles again. **KarmaRune**'s role table is deliberately *not* sealed: minting stays gated to a single `MINTER_ROLE` held by the off-chain earning engine, but the admin key keeps the ability to rotate that role, so a compromised or retired minter key can be replaced instead of leaving earning permanently stuck. The platform can therefore always mint KRUNE — that is how earning works — but KRUNE can never be *bought*: there is no payable path, and once minted it cannot be transferred to anyone at any price. Under the pool-share yield model, over-issued KRUNE cannot drain the treasury for it — excess KRUNE only dilutes other stakers' share of the same fee pool rather than creating a dollar claim against USDC that was never deposited — but that dilution is still a real cost to honest stakers, not a harmless one; the guarantee is that the treasury stays solvent, not that over-issuance is free.
-
-Beyond the code, our security posture includes a tier-1 audit before mainnet, a bug bounty from day one, a multi-signature treasury (3-of-5 signers), circuit breakers for emergencies, and fully open-source, verified contracts. The load-bearing invariants — earned-only and non-transferable KRUNE, the anti-whale gate, diminishing returns, and tamper-evidence — each have a test that fails if the rule is broken.
-
----
-
-## Legal & Regulatory
-
-TradeKarma originates in **Basel, Switzerland**, and operates within the Swiss regulatory framework under **FINMA**, the Swiss Financial Market Supervisory Authority. Switzerland offers one of the clearer token-classification regimes in the world — but "clearer" still means we obtain a formal legal opinion on every token classification before we issue anything.
-
-Our token designs map onto FINMA's categories deliberately. **KRUNE** is designed as a pure utility token: it grants access to platform features, it is only ever earned through usage, and there is no ICO and no token sale. Because our points-first approach means the economy is already live and functional when KRUNE tokenizes, the "utility must be usable at issuance" expectation is satisfied by construction. **KDEX** is an investment-and-governance token subject to anti-money-laundering rules and requiring careful legal review of how it is offered and traded. **KSHRD** is the complicated one: redeeming it for USDC from a treasury can resemble a banking function, which several advisors have flagged as potentially requiring a banking license. This is precisely why KSHRD does not activate without explicit legal clearance, and why the KDEX redemption path (a token-to-token conversion, a different regulatory posture) is built in as the structurally cleaner path to fall back on if USDC redemption becomes legally constrained — a regulatory preference, not the contract's default state: the branch itself ships disabled until governance enables it once a real KDEX market exists (see Treasury & Redemption). If clearance is not obtained, the fallback is simple and already designed for: keep two tokens and pay qualifying stakers directly, dropping KSHRD as a separate instrument — the anti-whale mechanic works either way.
-
-We budget CHF 30,000–50,000 for legal opinions across all phases and treat legal sign-off as a **blocking dependency**: no token is issued without the lawyer's approval, even if the technology is ready. Vendors undergo KYC; buyers get lighter phone-and-email verification with optional KYC to unlock higher earning limits.
-
----
-
-## Risks & Mitigations
-
-We would rather name the risks than bury them.
-
-**Sybil attacks and fake-account farming.** The existential threat. If someone can spin up 100 fake accounts and farm KRUNE, the earned-reputation gate is meaningless. Mitigations stack: vendor KYC is mandatory; KRUNE only comes from reviewing verified purchases above a minimum value; the diminishing-returns curve makes each additional action worth less; the quality multiplier is capped and AI-scored so low-effort spam earns almost nothing; new accounts earn at reduced rates; referrals only pay after 90 days of proven activity; graph analysis flags circular trading and mutual-review rings; and high-reputation users can serve as a community jury for edge cases. No system is gaming-proof — the goal is to make honest participation cheaper than fraud, and every mechanic is tuned toward that asymmetry.
-
-**Smart-contract exploits.** The economics are secondary to security; a flawless token model on a hacked contract is worthless. Mitigations: minimal auditable contracts, a tier-1 audit before mainnet, a bug bounty from day one, a 3-of-5 multi-sig treasury, circuit breakers, an irreversible role-seal on KarmaShard once deploy wiring is verified (closing the self-grant-and-mint path for good), and progressive rather than reckless decentralization.
-
-**Yield inflation / unbacked yield.** The failure mode that destroyed the "high-APY" projects. Mitigation is structural, not a policy promise: KSHRD is minted only as a share of USDC fees the treasury has actually received, through the pool-share accumulator, so a quiet platform with no fee revenue produces no yield no matter how much is staked; redemption is bounded by actual treasury holdings; and outstanding KSHRD can never exceed USDC actually deposited, because that is how the accumulator is built, not a rule layered on top of it.
-
-**Insufficient adoption.** If the marketplace never generates enough activity, yield never becomes meaningful. Mitigation: the phased model means we never over-invest ahead of proof — Phase 1 is cheap, and if behavior does not change, we stop before tokenizing. The base case is a functioning marketplace that stands on its own without any token.
-
-**Regulatory reclassification.** A token could be classified more strictly than expected — especially KSHRD. Mitigation: legal sign-off is a blocking dependency, the KDEX redemption path reduces banking-function exposure, and the two-token fallback is fully designed and ready.
-
-**Whale capture of governance.** Because governance is KDEX-weighted, a large holder could accumulate influence. Mitigation: quorum requirements, progressive and conditional decentralization, and the deliberate separation of governance (KDEX) from the yield key (which still requires earned KRUNE no whale can buy).
-
----
-
-## Roadmap
-
-These are targets, not promises. If a phase takes longer to prove, it takes longer — rushing a deadline is how projects ship insecure contracts.
-
-| Timeframe | Milestone |
-|-----------|-----------|
-| Months 1–3 | Legal entity, FINMA consultation, hire blockchain developer, design marketplace architecture |
-| Months 4–6 | Marketplace live: listings, checkout, fiat payments; KRUNE points system running on database |
-| Months 7–9 | First vendors onboarded, first real transactions, anti-gaming v1 deployed |
-| Months 10–12 | Cross the active-user threshold; analyze KRUNE engagement data; make the tokenization decision |
-| Months 13–18 | **Phase 2:** KRUNE migrates on-chain (Base), KDEX launches, Coinbase Smart Wallet, contracts audited |
-| Months 19–24 | DAO governance v1, treasury accumulating, marketplace scaling |
-| Months 25–36 | Multi-category expansion, vendor growth, sustained fee revenue |
-| Months 37–42 | **Phase 3:** KSHRD staking and yield go live (if legal and economic conditions are met); first redemptions |
-| Months 43–48 | Reputation protocol / SDK opened; first external platform integration |
-| Months 49–60 | Full DAO governance; contract ownership progressively renounced; protocol self-sustaining |
-
----
-
-## Conclusion
-
-TradeKarma is a bet that the internet's trust economy is broken because its incentives are backwards, and that the fix is to reward good behavior rather than merely punish bad behavior. The three tokens encode that bet precisely: **KarmaRune** is reputation you can only earn and never buy; **KarmaDex** is a fixed-supply investment and governance token you buy on a DEX; and **KarmaShard** is revenue-backed yield that exists only where earned reputation and invested capital are staked together.
-
-The anti-whale gate is the keystone. A whale with millions in KDEX and zero KRUNE cannot stake, cannot generate yield, and cannot buy their way past it — the reputation half is not for sale at any price, and the geometric-mean curve makes zero reputation mathematically worth zero yield. That single constraint, enforced in the code and not just the prose, is what keeps this a reward system for genuine participation rather than another pay-to-win token.
-
-And we are building it in the right order. Database first, prove the model, then launch tokens on Base with wallets ordinary people can actually use. Yield that comes from real revenue or does not come at all. A tamper-evident archive so the record can be trusted. A Swiss, FINMA-aware legal posture that treats legal sign-off as a hard gate. Reputation is not a badge you buy or a number a platform can quietly rewrite. It is something you earn, action by honest action — and with TradeKarma, it is finally something you own.
-
-**Earn Your Reputation, Never Buy It.**
-
----
-
-### Disclaimer — Not Financial Advice / Forward-Looking Statements
-
-This white paper is a design and planning document. It is **not financial advice**, not a prospectus, not an offer or solicitation to buy or sell any token or security, and not a promise of any return. It contains **forward-looking statements** — roadmap dates, economic projections, token designs, and mechanics — that involve assumptions, risks, and uncertainties; actual outcomes may differ materially. All numeric parameters (earning coefficients, yield rates, supply and distribution figures, thresholds) are illustrative and subject to change based on Phase 1 data, legal review, and community governance. No tokens have been issued, and no investment is being offered. Token designs described here may change or be withdrawn. Digital assets are volatile and may lose all value. **Review by qualified Swiss legal counsel is required before any token issuance**, and nothing herein should be relied upon as legal, tax, or financial advice. Consult your own professional advisors before making any decision.
-
----
-
-*TradeKarma · Basel, Switzerland · 2026 · tradekarma.net*
+No external professional audit, regulatory clearance, pilot outcome, return, token price, or launch date is represented as completed or guaranteed by this paper.

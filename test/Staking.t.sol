@@ -237,10 +237,14 @@ contract StakingTest is Test {
         vm.prank(ALICE);
         staking.stake(STAKE_KRUNE, STAKE_KDEX);
 
+        usdc.mint(FEE_PAYER, 2 * FEE_1000);
+        vm.prank(FEE_PAYER);
+        usdc.approve(address(staking), 2 * FEE_1000);
         // Nothing is outstanding yet, so the ratio is unbounded.
         vm.expectEmit(false, false, false, true, address(staking));
         emit CollateralRatioUpdated(type(uint256).max, 0, FEE_1000);
-        _depositFees(FEE_1000);
+        vm.prank(FEE_PAYER);
+        staking.depositFees(FEE_1000);
 
         // Close the position: 1,000 USDC of liability against 1,000 USDC held.
         vm.warp(block.timestamp + 90 days);
@@ -250,7 +254,8 @@ contract StakingTest is Test {
 
         vm.expectEmit(false, false, false, true, address(staking));
         emit CollateralRatioUpdated(2e18, FEE_1000, 2 * FEE_1000);
-        _depositFees(FEE_1000);
+        vm.prank(FEE_PAYER);
+        staking.depositFees(FEE_1000);
     }
 
     function test_depositFees_revertsWithoutAllowance() public {
@@ -267,9 +272,13 @@ contract StakingTest is Test {
     function test_depositFees_withNoStakersIsHeldAsUnallocated() public {
         assertEq(staking.totalWeight(), 0);
 
+        usdc.mint(FEE_PAYER, FEE_1000);
+        vm.prank(FEE_PAYER);
+        usdc.approve(address(staking), FEE_1000);
         vm.expectEmit(true, false, false, true, address(staking));
         emit FeeDeposited(FEE_PAYER, FEE_1000, 0, 0);
-        _depositFees(FEE_1000);
+        vm.prank(FEE_PAYER);
+        staking.depositFees(FEE_1000);
 
         assertEq(staking.rewardPerWeightStored(), 0, "nothing to divide by, so nothing is credited");
         assertEq(staking.unallocatedFees(), FEE_1000, "and nothing is lost either");
@@ -452,12 +461,12 @@ contract StakingTest is Test {
         vm.expectEmit(true, false, false, true, address(staking));
         emit Accrued(ALICE, FEE_1000);
         vm.prank(ALICE);
-        staking.stake(300e18, 3_600e18); // -> 400e18 / 4_000e18, weight 4e20
+        staking.stake(300e18, 3_600e18); // -> 400e18 / 4_000e18, weight sqrt(400 * 4000) * 1e18
 
         Pos memory p = _position(ALICE);
         assertEq(p.accruedUsdc, FEE_1000, "the earlier period is settled at the earlier weight");
-        assertEq(p.weight, 4e20);
-        assertEq(staking.totalWeight(), 4e20);
+        assertEq(p.weight, Math.sqrt(400e18) * Math.sqrt(4000e18));
+        assertEq(staking.totalWeight(), Math.sqrt(400e18) * Math.sqrt(4000e18));
         assertEq(staking.pendingKshrd(ALICE), KSHRD_1000, "and the top-up adds nothing by itself");
     }
 
@@ -504,7 +513,7 @@ contract StakingTest is Test {
         // Top-up replaces the old weight rather than adding a second one.
         vm.prank(ALICE);
         staking.stake(300e18, 3_600e18);
-        assertEq(staking.totalWeight(), 4e20 + ALICE_WEIGHT);
+        assertEq(staking.totalWeight(), Math.sqrt(400e18) * Math.sqrt(4000e18) + ALICE_WEIGHT);
 
         vm.warp(block.timestamp + 90 days);
         vm.prank(ALICE);

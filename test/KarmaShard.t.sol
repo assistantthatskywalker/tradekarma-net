@@ -390,6 +390,17 @@ contract KarmaShardTest is Test {
         assertEq(kshrd.balanceOf(USER), 5e18);
     }
 
+    function test_lockRoles_refusesExtraMinters() public {
+        vm.startPrank(ADMIN);
+        kshrd.grantRole(MINTER_ROLE, STRANGER);
+        vm.expectRevert("KSHRD: exactly one minter and burner required");
+        kshrd.lockRoles();
+        kshrd.revokeRole(MINTER_ROLE, STRANGER);
+        kshrd.lockRoles();
+        vm.stopPrank();
+        assertTrue(kshrd.rolesLocked());
+    }
+
     function test_rejectsEth() public {
         vm.deal(address(this), 1 ether);
         (bool ok,) = address(kshrd).call{value: 1 ether}("");

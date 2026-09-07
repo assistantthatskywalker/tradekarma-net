@@ -1,3 +1,4 @@
+import { assertAmount } from './Ledger';
 /**
  * User model for TradeKarma reputation system.
  * Tracks identity, reputation balance, and transaction history.
@@ -41,6 +42,10 @@ export class User {
   }
 
   addKRUNE(amount: number, txId: string): void {
+    assertAmount(amount);
+    assertAmount(this.reputation.balance + amount);
+    assertAmount(this.reputation.earned + amount);
+    if (this.reputation.transactions.includes(txId)) throw new Error("duplicate reputation event");
     this.reputation.balance += amount;
     this.reputation.earned += amount;
     this.reputation.transactions.push(txId);
@@ -48,6 +53,8 @@ export class User {
   }
 
   spendKRUNE(amount: number, txId: string): boolean {
+    assertAmount(amount);
+    if (this.reputation.transactions.includes(txId)) throw new Error("duplicate reputation event");
     if (this.reputation.balance < amount) {
       return false;
     }

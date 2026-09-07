@@ -1,3 +1,4 @@
+import { generateKeyPairSync } from 'node:crypto';
 /**
  * Sprint 3: Archive + hash259 Tests — tamper-evidence & access control.
  */
@@ -98,6 +99,28 @@ describe('TransactionArchive', () => {
     arc.append('t1', 'alice', 'review', 10, new Date());
     const buf = arc.serialize();
     expect(buf.length).toBeGreaterThan(0);
-    expect(buf.toString('utf-8', 0, 10)).toBe('hash259-v1');
+    expect(JSON.parse(buf.toString()).version).toBe(HASH259_VERSION);
+    const restored = TransactionArchive.deserialize(buf, arc.checkpoint());
+    expect(restored.verify()).toBe(true);
+    expect(restored.getTransactions('alice', AccessRole.USER)[0].timestamp).toEqual(arc.getTransactions('alice', AccessRole.USER)[0].timestamp);
   });
+});
+
+it('delimiter ambiguity, mutable reads and invalid digests no longer bypass integrity', () => {
+  const a = new TransactionArchive(), b = new TransactionArchive();
+  expect(a.append('a|b', 'c', 'review', 1, new Date(0))).not.toBe(b.append('a', 'b|c', 'review', 1, new Date(0)));
+  a.getTransactions('admin', AccessRole.ADMIN)[0].amount = 999;
+  expect(a.getTransactions('admin', AccessRole.ADMIN)[0].amount).toBe(1);
+  expect(verify('x', { version: HASH259_VERSION, algo: 'sha256', hex: 'z'.repeat(64) })).toBe(false);
+  expect(() => decodeDigest('wrong:sha256:' + 'a'.repeat(64))).toThrow();
+});
+it('independently retained signed checkpoints detect changed or truncated backups', () => {
+  const { publicKey, privateKey } = generateKeyPairSync('ed25519');
+  const arc = new TransactionArchive(); arc.append('one', 'a', 'review', 1, new Date(0));
+  const signed = arc.signCheckpoint(privateKey);
+  expect(arc.verifySignedCheckpoint(signed.checkpoint, signed.signature, publicKey)).toBe(true);
+  const empty = new TransactionArchive();
+  expect(empty.verifySignedCheckpoint(signed.checkpoint, signed.signature, publicKey)).toBe(false);
+  const data = JSON.parse(arc.serialize().toString()); data.transactions[0].amount = 2;
+  expect(() => TransactionArchive.deserialize(Buffer.from(JSON.stringify(data)))).toThrow();
 });

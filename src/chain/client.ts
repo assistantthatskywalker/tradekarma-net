@@ -53,15 +53,15 @@ export function createTradeKarmaPublicClient(chainId: ChainId) {
 
 /**
  * Signing client for write transactions (mintEarned, stake, unstake, redeem,
- * depositFees). Reads the private key from DEPLOYER_PRIVATE_KEY and fails
+ * depositFees). Reads the private key from EARNING_PRIVATE_KEY and fails
  * loudly if it is absent — this must never silently fall back to a
  * read-only/no-op client. The key itself is never logged or returned.
  */
 export function createTradeKarmaWalletClient(chainId: ChainId) {
-  const privateKey = process.env.DEPLOYER_PRIVATE_KEY;
+  const privateKey = process.env.EARNING_PRIVATE_KEY;
   if (!privateKey) {
     throw new Error(
-      'chain/client: DEPLOYER_PRIVATE_KEY is not set. Refusing to create a wallet client without an explicit signing key.'
+      'chain/client: EARNING_PRIVATE_KEY is not set. Refusing to create a wallet client without an explicit signing key.'
     );
   }
 

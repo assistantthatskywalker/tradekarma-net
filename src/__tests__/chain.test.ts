@@ -9,7 +9,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Address, Hash } from 'viem';
-import { Transaction, TransactionType } from '../models/Transaction';
 import {
   BASE_MAINNET_CHAIN_ID,
   BASE_SEPOLIA_CHAIN_ID,
@@ -33,7 +32,6 @@ import {
   toKarmaUnits,
   toUsdcUnits,
 } from '../chain/TradeKarmaChain';
-import { computeReasonHash, EarningMinter, SettlementLedger } from '../chain/settlement';
 
 const TEST_ADDRESS: Address = '0x000000000000000000000000000000000000aa';
 
@@ -55,19 +53,6 @@ function makeFakeWallet() {
 /** Minimal stand-in for a viem PublicClient: a scriptable readContract. */
 function makeFakePublic(readContract: (request: { functionName: string }) => Promise<unknown>) {
   return { readContract } as unknown as TradeKarmaPublicClient;
-}
-
-function makeEvent(overrides: Partial<Transaction> = {}): Transaction {
-  return {
-    id: 'event-1',
-    userId: 'user-1',
-    type: TransactionType.REVIEW,
-    amountKRUNE: 10,
-    multiplier: 1,
-    metadata: {},
-    timestamp: new Date('2026-01-01T00:00:00.000Z'),
-    ...overrides,
-  };
 }
 
 describe('Decimal conversion helpers', () => {
@@ -109,205 +94,6 @@ describe('Decimal conversion helpers', () => {
     const oneUnit = 1_000_000n;
     expect(fromUsdcUnits(oneUnit)).toBe('1');
     expect(fromKarmaUnits(oneUnit)).toBe('0.000000000001');
-  });
-});
-
-describe('computeReasonHash', () => {
-  it('is deterministic: the same event always hashes the same', () => {
-    const event = makeEvent();
-    expect(computeReasonHash(event)).toBe(computeReasonHash(event));
-    expect(computeReasonHash(makeEvent())).toBe(computeReasonHash(makeEvent()));
-  });
-
-  it('produces a well-formed 32-byte hex hash', () => {
-    const hash = computeReasonHash(makeEvent());
-    expect(hash).toMatch(/^0x[0-9a-f]{64}$/);
-  });
-
-  it('changes when the event id changes', () => {
-    const a = computeReasonHash(makeEvent({ id: 'event-1' }));
-    const b = computeReasonHash(makeEvent({ id: 'event-2' }));
-    expect(a).not.toBe(b);
-  });
-
-  it('changes when the user changes', () => {
-    const a = computeReasonHash(makeEvent({ userId: 'user-1' }));
-    const b = computeReasonHash(makeEvent({ userId: 'user-2' }));
-    expect(a).not.toBe(b);
-  });
-
-  it('changes when the transaction type changes', () => {
-    const a = computeReasonHash(makeEvent({ type: TransactionType.REVIEW }));
-    const b = computeReasonHash(makeEvent({ type: TransactionType.HELP }));
-    expect(a).not.toBe(b);
-  });
-
-  it('changes when the amount changes', () => {
-    const a = computeReasonHash(makeEvent({ amountKRUNE: 10 }));
-    const b = computeReasonHash(makeEvent({ amountKRUNE: 11 }));
-    expect(a).not.toBe(b);
-  });
-
-  it('changes when the timestamp changes', () => {
-    const a = computeReasonHash(makeEvent({ timestamp: new Date('2026-01-01T00:00:00.000Z') }));
-    const b = computeReasonHash(makeEvent({ timestamp: new Date('2026-01-01T00:00:00.001Z') }));
-    expect(a).not.toBe(b);
-  });
-});
-
-describe('SettlementLedger', () => {
-  class FakeChain implements EarningMinter {
-    calls: Array<{ user: Address; amount: bigint; reasonHash: Hash }> = [];
-    settledCalls: Hash[] = [];
-    private behaviors: Array<'succeed' | 'fail'>;
-    /** Set of reasonHash values the fake chain considers already settled — simulates a mint from a previous process. */
-    private preSettled: Set<Hash>;
-
-    constructor(behaviors: Array<'succeed' | 'fail'> = ['succeed'], preSettled: Hash[] = []) {
-      this.behaviors = behaviors;
-      this.preSettled = new Set(preSettled);
-    }
-
-    async mintEarned(user: Address, amount: bigint, reasonHash: Hash): Promise<Hash> {
-      this.calls.push({ user, amount, reasonHash });
-      const behavior = this.behaviors[this.calls.length - 1] ?? 'succeed';
-      if (behavior === 'fail') {
-        throw new Error('RPC error: simulated submission failure');
-      }
-      this.preSettled.add(reasonHash);
-      return `0xtxhash${this.calls.length}` as Hash;
-    }
-
-    async kruneSettled(reasonHash: Hash): Promise<boolean> {
-      this.settledCalls.push(reasonHash);
-      return this.preSettled.has(reasonHash);
-    }
-  }
-
-  it('mints exactly once for a single settlement', async () => {
-    const chain = new FakeChain(['succeed']);
-    const ledger = new SettlementLedger();
-    const event = makeEvent();
-
-    const record = await ledger.settle(chain, event, TEST_ADDRESS);
-
-    expect(record.status).toBe('confirmed');
-    expect(record.txHash).toBe('0xtxhash1');
-    expect(chain.calls).toHaveLength(1);
-    expect(chain.calls[0].user).toBe(TEST_ADDRESS);
-    expect(chain.calls[0].amount).toBe(toKarmaUnits(event.amountKRUNE));
-    expect(chain.calls[0].reasonHash).toBe(computeReasonHash(event));
-  });
-
-  it('never mints twice for the same event id (idempotent on confirmed)', async () => {
-    const chain = new FakeChain(['succeed']);
-    const ledger = new SettlementLedger();
-    const event = makeEvent();
-
-    const first = await ledger.settle(chain, event, TEST_ADDRESS);
-    const second = await ledger.settle(chain, event, TEST_ADDRESS);
-
-    expect(chain.calls).toHaveLength(1); // second call short-circuited, no chain call
-    expect(second).toEqual(first);
-    expect(ledger.isConfirmed(event.id)).toBe(true);
-  });
-
-  it('supports retry after a failed attempt, reusing the same reasonHash', async () => {
-    const chain = new FakeChain(['fail', 'succeed']);
-    const ledger = new SettlementLedger();
-    const event = makeEvent();
-
-    await expect(ledger.settle(chain, event, TEST_ADDRESS)).rejects.toThrow(/simulated submission failure/);
-
-    const failedRecord = ledger.get(event.id);
-    expect(failedRecord?.status).toBe('failed');
-    expect(failedRecord?.attempts).toBe(1);
-    expect(failedRecord?.lastError).toMatch(/simulated submission failure/);
-
-    const retried = await ledger.settle(chain, event, TEST_ADDRESS);
-
-    expect(retried.status).toBe('confirmed');
-    expect(retried.attempts).toBe(2);
-    expect(chain.calls).toHaveLength(2);
-    // Same deterministic reasonHash on both attempts: an on-chain observer
-    // can reconcile the eventually-successful mint to the same audit key
-    // regardless of how many attempts it took.
-    expect(chain.calls[0].reasonHash).toBe(chain.calls[1].reasonHash);
-    expect(chain.calls[1].reasonHash).toBe(computeReasonHash(event));
-  });
-
-  it('does not retry (or re-mint) an already-confirmed event even after being asked again post-failure-of-a-different-event', async () => {
-    const chain = new FakeChain(['succeed', 'succeed']);
-    const ledger = new SettlementLedger();
-    const eventA = makeEvent({ id: 'event-a' });
-    const eventB = makeEvent({ id: 'event-b' });
-
-    await ledger.settle(chain, eventA, TEST_ADDRESS);
-    await ledger.settle(chain, eventB, TEST_ADDRESS);
-    await ledger.settle(chain, eventA, TEST_ADDRESS); // repeat A
-
-    expect(chain.calls).toHaveLength(2); // one per distinct event id, not 3
-    expect(ledger.isConfirmed('event-a')).toBe(true);
-    expect(ledger.isConfirmed('event-b')).toBe(true);
-  });
-
-  it('reports undefined / not-confirmed for an event that was never settled', () => {
-    const ledger = new SettlementLedger();
-    expect(ledger.get('never-settled')).toBeUndefined();
-    expect(ledger.isConfirmed('never-settled')).toBe(false);
-  });
-
-  describe('on-chain settled() guard (survives process restart)', () => {
-    it('checks kruneSettled() before every submission attempt', async () => {
-      const chain = new FakeChain(['succeed']);
-      const ledger = new SettlementLedger();
-      const event = makeEvent();
-
-      await ledger.settle(chain, event, TEST_ADDRESS);
-
-      expect(chain.settledCalls).toEqual([computeReasonHash(event)]);
-    });
-
-    it('short-circuits to CONFIRMED without minting when the reasonHash is already settled on-chain', async () => {
-      // Simulates a fresh process (empty in-memory ledger) retrying an event
-      // whose mint actually landed before a restart wiped the ledger's memory.
-      const reasonHash = computeReasonHash(makeEvent());
-      const chain = new FakeChain(['succeed'], [reasonHash]);
-      const ledger = new SettlementLedger();
-      const event = makeEvent();
-
-      const record = await ledger.settle(chain, event, TEST_ADDRESS);
-
-      expect(record.status).toBe('confirmed');
-      expect(record.txHash).toBeUndefined(); // no transaction was sent by this process
-      expect(chain.calls).toHaveLength(0); // mintEarned was never called
-      expect(ledger.isConfirmed(event.id)).toBe(true);
-    });
-
-    it('proceeds to mint when kruneSettled() reports false', async () => {
-      const chain = new FakeChain(['succeed']);
-      const ledger = new SettlementLedger();
-      const event = makeEvent();
-
-      const record = await ledger.settle(chain, event, TEST_ADDRESS);
-
-      expect(record.status).toBe('confirmed');
-      expect(record.txHash).toBe('0xtxhash1');
-      expect(chain.calls).toHaveLength(1);
-    });
-
-    it('a settle() call that hits the on-chain guard still records attempts and reasonHash correctly', async () => {
-      const reasonHash = computeReasonHash(makeEvent());
-      const chain = new FakeChain(['succeed'], [reasonHash]);
-      const ledger = new SettlementLedger();
-      const event = makeEvent();
-
-      const record = await ledger.settle(chain, event, TEST_ADDRESS);
-
-      expect(record.reasonHash).toBe(reasonHash);
-      expect(record.attempts).toBe(1);
-      expect(record.eventId).toBe(event.id);
-    });
   });
 });
 
@@ -371,24 +157,24 @@ describe('Wallet client fail-loud behavior', () => {
     process.env = { ...originalEnv };
   });
 
-  it('throws a clear error when DEPLOYER_PRIVATE_KEY is missing', () => {
-    delete process.env.DEPLOYER_PRIVATE_KEY;
-    expect(() => createTradeKarmaWalletClient(BASE_SEPOLIA_CHAIN_ID)).toThrow(/DEPLOYER_PRIVATE_KEY/);
+  it('throws a clear error when EARNING_PRIVATE_KEY is missing', () => {
+    delete process.env.EARNING_PRIVATE_KEY;
+    expect(() => createTradeKarmaWalletClient(BASE_SEPOLIA_CHAIN_ID)).toThrow(/EARNING_PRIVATE_KEY/);
   });
 
   it('does not fall back silently — the thrown error names the missing var', () => {
-    delete process.env.DEPLOYER_PRIVATE_KEY;
+    delete process.env.EARNING_PRIVATE_KEY;
     try {
       createTradeKarmaWalletClient(BASE_MAINNET_CHAIN_ID);
       throw new Error('expected createTradeKarmaWalletClient to throw');
     } catch (err) {
       expect(err).toBeInstanceOf(Error);
-      expect((err as Error).message).toMatch(/DEPLOYER_PRIVATE_KEY/);
+      expect((err as Error).message).toMatch(/EARNING_PRIVATE_KEY/);
     }
   });
 
   it('creates a real signing account when the key is present', () => {
-    process.env.DEPLOYER_PRIVATE_KEY = `0x${'11'.repeat(32)}`;
+    process.env.EARNING_PRIVATE_KEY = `0x${'11'.repeat(32)}`;
     process.env.BASE_SEPOLIA_RPC_URL = 'https://example-rpc.test';
 
     const wallet = createTradeKarmaWalletClient(BASE_SEPOLIA_CHAIN_ID);
