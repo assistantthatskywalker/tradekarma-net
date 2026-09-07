@@ -14,3 +14,12 @@ graphify-out/
 out/
 cache/
 broadcast/
+
+# Persistent service state stays outside version control
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+supabase/.temp/
+
+playwright-report/
+test-results/

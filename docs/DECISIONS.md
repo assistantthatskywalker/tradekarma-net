@@ -5,6 +5,57 @@ why it was implemented this way, and what would justify revisiting it.
 
 ---
 
+## 2026-09-07 — Waitlist storage: dedicated Supabase project, provisioned and deployed
+
+### Before
+
+The waitlist backend (private RPC migration, `api/waitlist.js` serverless function, browser
+handler, Jest/SQL/Playwright tests) was authored and passed every local check, but had no live
+home: no Supabase project was connected and no production env vars were set. Submitting the form
+in production returned "temporarily unavailable" because `SUPABASE_URL`/`SUPABASE_SECRET_KEY`/
+`WAITLIST_RATE_LIMIT_SECRET` were unset. The prior agent deliberately stopped here rather than
+writing schema into an unrelated existing database.
+
+### After
+
+- New **dedicated** Supabase project `tradekarma` (ref `cuegmbgijzogjomvnikj`, org TSWE-Agency,
+  region `eu-central-1`/Frankfurt) — TradeKarma's PII lives in its own isolated database, not
+  mixed into any existing project.
+- Migration `20260907075033_secure_waitlist.sql` applied via the Management API. Verified live:
+  RLS on both tables, `join_tradekarma_waitlist` is SECURITY INVOKER, anon/authenticated hold
+  zero grants, execute + table grants only to `service_role`. The `test/sql/waitlist.sql` role
+  suite passes against the live DB.
+- Four production env vars set on the `tradekarma_net` Vercel project (`SUPABASE_URL`,
+  `SUPABASE_SECRET_KEY` = modern `sb_secret_` key, `WAITLIST_RATE_LIMIT_SECRET` = fresh 32-byte
+  hex, `WAITLIST_ALLOWED_ORIGINS`). Deployed to production.
+- End-to-end verified against `https://tradekarmanet.vercel.app/api/waitlist`: valid signup →
+  202 and stored exactly once; cross-origin → 403; GET → 405; invalid email → 400; honeypot →
+  202 with no write. Test rows deleted afterward (0 rows remain).
+- Non-secret project facts + all secrets written to `~/.config/tradekarma-supabase.creds`
+  (mode 600, outside the repo). Local suites green: Jest 111/111, Playwright 6/6.
+
+### Decisions and rationale
+
+**1. A dedicated project, not an existing one.** TradeKarma is a standalone product (own repo,
+own Vercel project, own domain). Reusing Kinky Galore / herbalist / Kali databases would mix
+unrelated user PII and was correctly refused by the prior agent. Every other product in the
+account has its own Supabase project; the waitlist follows that pattern.
+
+**2. EU-central (Frankfurt) region.** TradeKarma is a Basel/Swiss project; keeping signup PII in
+the EU is the sensible data-residency default.
+
+**3. Modern `sb_secret_` key over the legacy service-role JWT.** `api/waitlist.js` already
+supports both (apikey-only header for `sb_secret_`); the new key type is the forward path.
+
+### Revisit if
+
+- `tradekarma.net` DNS is pointed at Vercel — the origin allowlist already includes it, so no
+  code change is needed, but confirm the alias resolves.
+- Signup volume warrants moving the rate-limit table to a TTL/cron cleanup rather than the
+  inline 24h delete inside the RPC.
+
+---
+
 ## 2026-07-28 — On-chain layer: Solidity toolchain, OpenZeppelin port, security remediation
 
 ### Before

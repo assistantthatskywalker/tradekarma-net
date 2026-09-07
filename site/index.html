@@ -1,168 +1,351 @@
-<!DOCTYPE html>
+<!doctype html>
+<!-- Canonical TradeKarma landing page. Historical design variants are excluded from deployment. -->
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TradeKarma — Earn Your Reputation, Never Buy It</title>
-  <meta name="description" content="TradeKarma is a positive-reinforcement token economy for e-commerce.">
-  <link rel="icon" href="assets/img/favicon.ico" sizes="any">
-  <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png">
-  <link rel="apple-touch-icon" href="assets/img/favicon-180.png">
-  <meta property="og:image" content="assets/img/tradekarma-shard-icon.png">
-  <style>
-    body { margin: 0; padding: 0; }
-    .design-toggle {
-      position: fixed;
-      top: 1rem;
-      right: 2rem;
-      z-index: 200;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      background: rgba(10, 10, 10, 0.95);
-      padding: 0.75rem 1rem;
-      border-radius: 2rem;
-      border: 1px solid rgba(212, 175, 55, 0.3);
-      backdrop-filter: blur(10px);
-    }
-
-    .design-toggle label {
-      font-size: 0.85rem;
-      color: #bbb;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .toggle-switch {
-      position: relative;
-      width: 50px;
-      height: 24px;
-      background: rgba(20, 20, 30, 0.8);
-      border-radius: 12px;
-      cursor: pointer;
-      border: 1px solid rgba(212, 175, 55, 0.3);
-      transition: all 0.3s;
-    }
-
-    .toggle-switch::after {
-      content: '';
-      position: absolute;
-      width: 20px;
-      height: 20px;
-      background: #d4af37;
-      border-radius: 50%;
-      top: 2px;
-      left: 2px;
-      transition: left 0.3s;
-    }
-
-    input[type="checkbox"] { display: none; }
-
-    input[type="checkbox"]:checked + .toggle-switch {
-      background: rgba(20, 184, 166, 0.2);
-      border-color: #14b8a6;
-    }
-
-    input[type="checkbox"]:checked + .toggle-switch::after {
-      left: 28px;
-      background: #14b8a6;
-    }
-
-    .variant-frame {
-      display: none;
-      width: 100%;
-      height: 100%;
-    }
-
-    .variant-frame.active {
-      display: block;
-    }
-
-    @media (max-width: 768px) {
-      .design-toggle {
-        top: 4rem;
-        right: 1rem;
-        font-size: 0.75rem;
-        padding: 0.5rem 0.75rem;
-      }
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TradeKarma — Earn Your Reputation, Never Buy It</title>
+<meta name="description" content="TradeKarma is a positive-reinforcement commerce protocol. Earn KarmaRune for honest reviews and good service — reputation you build, never buy. Basel, Switzerland." />
+<meta name="theme-color" content="#0a0a0a" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230a0a0a'/%3E%3Cpath d='M9 8v16M9 16l8-8M9 16l8 8' fill='none' stroke='%23d4af37' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/assets/site.css">
 </head>
 <body>
-  <div class="design-toggle">
-    <label>
-      <span id="variant-label">Design: Opus</span>
-      <input type="checkbox" id="design-switch" aria-label="Toggle between Opus and GPT design variants">
-      <div class="toggle-switch"></div>
-    </label>
+
+<header class="site" id="site-header">
+  <div class="wrap nav">
+    <a class="brand" href="#top" aria-label="TradeKarma home">
+      <span class="mark" aria-hidden="true"><span aria-hidden="true">ᚲ</span></span>
+      <span class="wordmark">TradeKarma</span>
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#problem">The Problem</a>
+      <a href="#tokens">Tokens</a>
+      <a href="#how">How It Works</a>
+      <a href="#roadmap">Roadmap</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-primary btn-sm" href="#waitlist">Join Waitlist</a>
+    </div>
   </div>
+</header>
 
-  <div id="gpt-variant" class="variant-frame"></div>
-  <div id="opus-variant" class="variant-frame active"></div>
+<main id="top">
 
-  <script>
-    const gptFrame = document.getElementById('gpt-variant');
-    const opusFrame = document.getElementById('opus-variant');
-    const designSwitch = document.getElementById('design-switch');
-    const variantLabel = document.getElementById('variant-label');
+  <!-- ===================== 1 · HERO ===================== -->
+  <section class="hero" id="hero" aria-labelledby="hero-title">
+    <div class="hero-media" aria-hidden="true">
+      <img class="layer hero-bg" data-parallax="0.12" src="assets/img/hero-bg.webp" alt="" fetchpriority="high" decoding="async" />
+      <video class="layer" id="hero-video" muted loop playsinline preload="none" poster="assets/img/hero-bg.webp">
+        <source src="assets/video/hero-loop.mp4" type="video/mp4" />
+      </video>
+    </div>
+    <canvas id="mist-canvas" aria-hidden="true"></canvas>
+    <div class="hero-overlay hero-mist" data-parallax="0.05" style="background-image:url('assets/img/mist.webp')" aria-hidden="true"></div>
+    <div class="hero-overlay hero-lightning" style="background-image:url('assets/img/lightning.webp')" aria-hidden="true"></div>
+    <div class="hero-scrim" aria-hidden="true"></div>
 
-    // Load variants
-    async function loadVariants() {
-      try {
-        const gptHtml = await fetch('gpt-5.6--redesign/variant-gpt.html').then(r => r.text());
-        const opusHtml = await fetch('opus-4.8--redesign/variant-opus.html').then(r => r.text());
+    <div class="wrap hero-inner">
+      <div class="hero-content">
+        <p class="eyebrow">In development · Merchant pilot planned</p>
+        <h1 id="hero-title">Earn Your Reputation,<br /><span class="em">Never Buy It.</span></h1>
+        <p class="hero-sub">A proposed commerce protocol rewarding verified reviews, helpful answers, and reliable service. We are testing whether better incentives create better commerce.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#waitlist">Join the Waitlist <span class="btn-arrow" aria-hidden="true">→</span></a>
+          <a class="btn btn-ghost" href="/whitepaper.html">Read the White Paper</a>
+        </div>
+        <div class="hero-meta" aria-hidden="true">
+          <span>Basel, Switzerland</span>
+          <span>Legal review before token launch</span>
+          <span>Points first, tokens later</span>
+        </div>
+      </div>
+    </div>
 
-        gptFrame.innerHTML = gptHtml;
-        opusFrame.innerHTML = opusHtml;
+    <div class="scroll-cue" aria-hidden="true">
+      <span class="rail"></span>
+      Scroll
+    </div>
+  </section>
 
-        // Re-execute scripts in the loaded HTML
-        const gptScripts = gptFrame.querySelectorAll('script');
-        const opusScripts = opusFrame.querySelectorAll('script');
+  <!-- ===================== 2 · PROBLEM ===================== -->
+  <section class="section" id="problem" aria-labelledby="problem-title">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <p class="eyebrow">The Problem</p>
+        <h2 id="problem-title">E-Commerce Is Broken.</h2>
+        <p>Today's marketplaces are built on punishment — catching bad actors after the damage is done. The people who create real trust get nothing for it.</p>
+      </div>
 
-        gptScripts.forEach(script => {
-          const newScript = document.createElement('script');
-          newScript.textContent = script.textContent;
-          gptFrame.appendChild(newScript);
-        });
+      <div class="grid-3">
+        <article class="card problem-card reveal" style="--d:0ms">
+          <span class="idx">01</span>
+          <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 3.5l2.3 4.9 5.4.7-4 3.7 1 5.3-4.7-2.6-4.7 2.6 1-5.3-4-3.7 5.4-.7z"/><path d="M4 4l16 16"/></svg></span>
+          <h3>Fake Reviews Everywhere</h3>
+          <p>Fake reviews undermine purchase decisions. We want to test rewards for verified, useful contributions, independently of whether a review is positive.</p>
+        </article>
 
-        opusScripts.forEach(script => {
-          const newScript = document.createElement('script');
-          newScript.textContent = script.textContent;
-          opusFrame.appendChild(newScript);
-        });
-      } catch (error) {
-        console.error('Failed to load variants:', error);
-      }
-    }
+        <article class="card problem-card reveal" style="--d:90ms">
+          <span class="idx">02</span>
+          <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M19 3l2 2-4 4"/></svg></span>
+          <h3>Vendors Are Disposable</h3>
+          <p>Great service earns no lasting advantage. Reputation is locked to one platform, and an algorithm change can wipe out a vendor's visibility overnight.</p>
+        </article>
 
-    // Toggle handler
-    designSwitch.addEventListener('change', () => {
-      if (designSwitch.checked) {
-        gptFrame.classList.add('active');
-        opusFrame.classList.remove('active');
-        variantLabel.textContent = 'Design: GPT';
-        localStorage.setItem('tradekarma-variant', 'gpt');
-      } else {
-        gptFrame.classList.remove('active');
-        opusFrame.classList.add('active');
-        variantLabel.textContent = 'Design: Opus';
-        localStorage.setItem('tradekarma-variant', 'opus');
-      }
-    });
+        <article class="card problem-card reveal" style="--d:180ms">
+          <span class="idx">03</span>
+          <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-3.3 3.1-6 7-6s7 2.7 7 6"/><path d="M17 5a3 3 0 0 1 0 6"/><path d="M20 20c0-2.5-1.4-4.6-3.5-5.5"/></svg></span>
+          <h3>Communities Own Nothing</h3>
+          <p>Buyers and vendors build the trust that makes a marketplace valuable — then watch every bit of that value get extracted by the platform that hosts it.</p>
+        </article>
+      </div>
+    </div>
+  </section>
 
-    // Restore user preference
-    const savedVariant = localStorage.getItem('tradekarma-variant') || 'opus';
-    if (savedVariant === 'gpt') {
-      designSwitch.checked = true;
-      gptFrame.classList.add('active');
-      opusFrame.classList.remove('active');
-      variantLabel.textContent = 'Design: GPT';
-    }
+  <!-- ===================== 3 · SOLUTION ===================== -->
+  <section class="section solution" id="tokens" aria-labelledby="tokens-title">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <p class="eyebrow">The Solution</p>
+        <h2 id="tokens-title">Three Roles. A Proposed Economy.</h2>
+        <p>Reputation, capital, and funded rewards have different roles. Each token must prove its usefulness before launch.</p>
+      </div>
 
-    // Load on page load
-    loadVariants();
-  </script>
+      <div class="token-grid">
+        <!-- KRUNE -->
+        <article class="token krune reveal" style="--d:0ms">
+          <span class="glow" aria-hidden="true"></span>
+          <img class="token-rune" src="assets/img/rune-krune.webp" alt="KarmaRune gold rune glyph" width="96" height="96" loading="lazy" decoding="async" />
+          <span class="earned-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            Earned, never bought
+          </span>
+          <span class="token-ticker">$KRUNE</span>
+          <h3>KarmaRune</h3>
+          <p class="role">Reputation</p>
+          <p>Proof you participated and contributed. KarmaRune is earned, never bought — it only enters the system through honest reviews, good service, and referrals.</p>
+          <dl class="how">
+            <dt>How you get it</dt>
+            <dd><b>Verified contributions.</b> The reference token cannot transfer between holders. Account sales and farming still require prevention.</dd>
+          </dl>
+        </article>
+
+        <!-- KDEX -->
+        <article class="token kdex reveal" style="--d:110ms">
+          <span class="glow" aria-hidden="true"></span>
+          <img class="token-rune" src="assets/img/rune-kdex.webp" alt="KarmaDex teal rune glyph" width="96" height="96" loading="lazy" decoding="async" />
+          <span class="token-ticker">$KDEX</span>
+          <h3>KarmaDex</h3>
+          <p class="role">Investment &amp; Governance</p>
+          <p>A proposed fixed-supply capital token. Its rights, distribution, vesting, and need must be established before issuance.</p>
+          <dl class="how">
+            <dt>How you get it</dt>
+            <dd><b>Not offered for sale here.</b> Exchange availability and on-chain governance are not established by this project.</dd>
+          </dl>
+        </article>
+
+        <!-- KSHRD -->
+        <article class="token kshrd reveal" style="--d:220ms">
+          <span class="glow" aria-hidden="true"></span>
+          <img class="token-rune" src="assets/img/rune-kshrd.webp" alt="KarmaShard violet rune glyph" width="96" height="96" loading="lazy" decoding="async" />
+          <span class="token-ticker">$KSHRD</span>
+          <h3>KarmaShard</h3>
+          <p class="role">Yield</p>
+          <p>What you get when earned reputation meets invested capital. The bridge between the two halves of the economy.</p>
+          <dl class="how">
+            <dt>How you get it</dt>
+            <dd>Proposed funded reward claims from <b>KRUNE + KDEX</b> staking. No live yield is offered. KDEX conversion remains disabled by default.</dd>
+          </dl>
+        </article>
+      </div>
+
+      <div class="anti-whale reveal">
+        <div class="kicker">Participation required</div>
+        <p>The reference contracts require both reputation and capital. This blocks zero-reputation staking, <b>but it does not prevent capital concentration or account farming</b>. Those risks need further testing.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 4 · EARNING MECHANICS ===================== -->
+  <section class="section earn" id="earning" aria-labelledby="earning-title">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <p class="eyebrow">Earning Mechanics</p>
+        <h2 id="earning-title">Not All Actions Are Equal.</h2>
+        <p>KarmaRune is logarithmic, quality-weighted, and capped. The system pays for the exact behavior that helps a real person make a real decision.</p>
+      </div>
+
+      <div class="earn-grid">
+        <article class="earn-item reveal" style="--d:0ms">
+          <div class="num">01</div>
+          <h3>Logarithmic, not linear</h3>
+          <p>The base reward decreases with a participant's review count. Purchase value does not increase review rewards. This curve still needs anti-farming controls.</p>
+          <span class="tag">diminishing returns</span>
+        </article>
+
+        <article class="earn-item reveal" style="--d:90ms">
+          <div class="num">02</div>
+          <h3>Detail multiplies your reward</h3>
+          <p>In the reference formula, a new user's first detailed photo review on an unreviewed product earns <b>117 KRUNE</b>; a basic review in that same situation earns 30.</p>
+          <span class="tag">quality multiplier</span>
+        </article>
+
+        <article class="earn-item reveal" style="--d:0ms">
+          <div class="num">03</div>
+          <h3>Helpfulness pays retroactively</h3>
+          <p>A verified helpful answer earns <b>5 KRUNE</b>. The commerce integration must establish usefulness; self-declared votes do not establish evidence.</p>
+          <span class="tag">delayed bonus</span>
+        </article>
+
+        <article class="earn-item reveal" style="--d:90ms">
+          <div class="num">04</div>
+          <h3>First reviews earn 3×</h3>
+          <p>The first reviews on a product — where coverage is thin — earn a <b>3× bonus</b>. Go where the trust doesn't exist yet and get rewarded for building it.</p>
+          <span class="tag">coverage bonus</span>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 5 · HOW IT WORKS ===================== -->
+  <section class="section" id="how" aria-labelledby="how-title">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <p class="eyebrow">How It Works</p>
+        <h2 id="how-title">Four Steps to Earned Trust.</h2>
+        <p>From your first purchase to real yield — a loop that rewards the people who create trust, not just the platform that hosts it.</p>
+      </div>
+
+      <div class="steps">
+        <article class="step reveal" style="--d:0ms">
+          <span class="line" aria-hidden="true"></span><span class="dot" aria-hidden="true"></span>
+          <span class="n">STEP 01</span>
+          <h3>Browse &amp; Buy</h3>
+          <p>Shop quality vendors. Every honest action from here on is the start of a reputation you actually own.</p>
+        </article>
+        <article class="step reveal" style="--d:80ms">
+          <span class="line" aria-hidden="true"></span><span class="dot" aria-hidden="true"></span>
+          <span class="n">STEP 02</span>
+          <h3>Earn $KRUNE</h3>
+          <p>Honest reviews, on-time shipping, helpful answers, referrals. Reputation you build — never buy.</p>
+        </article>
+        <article class="step reveal" style="--d:160ms">
+          <span class="line" aria-hidden="true"></span><span class="dot" aria-hidden="true"></span>
+          <span class="n">STEP 03</span>
+          <h3>Stake KRUNE + KDEX</h3>
+          <p>The reference contract holds KDEX for 90 days and references KRUNE in your wallet. Top-ups restart the entire lock; there is no early exit.</p>
+        </article>
+        <article class="step reveal" style="--d:240ms">
+          <span class="line" aria-hidden="true"></span><span class="dot" aria-hidden="true"></span>
+          <span class="n">STEP 04</span>
+          <h3>Redeem or Recycle</h3>
+          <p>Only transferred fees can fund rewards. The reference USDC redemption path exists; KDEX conversion is disabled by default. No return is guaranteed.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 6 · ROADMAP ===================== -->
+  <section class="section roadmap" id="roadmap" aria-labelledby="roadmap-title">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <p class="eyebrow">Roadmap</p>
+        <h2 id="roadmap-title">From Points to Protocol.</h2>
+        <p>Our roadmap is not a hype timeline. It is a proof schedule — we prove the economy works with points before a single token goes on-chain.</p>
+      </div>
+
+      <div class="phases">
+        <article class="phase p1 reveal" style="--d:0ms">
+          <div class="ph"><span class="lbl">Phase 1</span><span class="st">Building now</span></div>
+          <h3>Verified Merchant Pilot</h3>
+          <p>Build verified order integration and durable accounting, then measure merchant value and customer outcomes using points.</p>
+          <div class="bar" aria-hidden="true"><span></span></div>
+        </article>
+        <article class="phase p2 reveal" style="--d:110ms">
+          <div class="ph"><span class="lbl">Phase 2</span><span class="st">Next</span></div>
+          <h3>Validate the Economics</h3>
+          <p>Test fraud resistance, concentration, cash flow, and whether each token is needed. Obtain legal clearance and independent security review.</p>
+          <div class="bar" aria-hidden="true"><span></span></div>
+        </article>
+        <article class="phase p3 reveal" style="--d:220ms">
+          <div class="ph"><span class="lbl">Phase 3</span><span class="st">Endgame</span></div>
+          <h3>Open Protocol</h3>
+          <p>Consider token issuance, funded rewards, and portable reputation only after the business and security gates are satisfied.</p>
+          <div class="bar" aria-hidden="true"><span></span></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 7 · TRUST & SECURITY ===================== -->
+  <section class="section trust" id="trust" aria-labelledby="trust-title">
+    <div class="wrap trust-inner">
+      <div class="reveal">
+        <p class="eyebrow">Trust &amp; Security</p>
+        <h2 id="trust-title">Security and evidence <span class="u">before launch</span>.</h2>
+      </div>
+      <ul class="trust-points reveal" style="--d:120ms">
+        <li>
+          <span class="tk" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
+          <div><strong>Built in Basel, Switzerland</strong><span>Swiss legal assessment and independent security review are required before a token offering. Neither is represented as completed.</span></div>
+        </li>
+        <li>
+          <span class="tk" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h10"/></svg></span>
+          <div><strong>Database-first</strong><span>Prove the model with real usage, then launch the tokens. Points first, tokens later.</span></div>
+        </li>
+        <li>
+          <span class="tk" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M5 8c3 0 5-2 7-2s4 2 7 2"/><circle cx="12" cy="20" r="1.6"/></svg></span>
+          <div><strong>Start centralized, earn the DAO</strong><span>We hold the keys until the community is ready. Governance moves to holders as the protocol matures.</span></div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===================== 8 · FOOTER ===================== -->
+<footer class="site" id="waitlist">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand reveal">
+        <a class="brand" href="#top" aria-label="TradeKarma home">
+          <span class="mark" aria-hidden="true"><span aria-hidden="true">ᚲ</span></span>
+          <span class="wordmark">TradeKarma</span>
+        </a>
+        <p>The e-commerce protocol where reputation is an asset you earn through good behavior — never one you buy.</p>
+        <p class="foot-tag">Earn Your Reputation, Never Buy It.</p>
+      </div>
+
+      <div class="waitlist reveal" style="--d:120ms">
+        <h3>Join the Waitlist</h3>
+        <p>Register interest in the merchant pilot and project updates. Joining does not award tokens or guarantee access.</p>
+        <form id="waitlist-form">
+          <div class="wl-row">
+            <label for="wl-email" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">Email address</label>
+            <input id="wl-email" type="email" name="email" inputmode="email" autocomplete="email" placeholder="you@email.com" required />
+            <button class="btn btn-primary" type="submit">Join Waitlist <span class="btn-arrow" aria-hidden="true">→</span></button>
+          </div>
+          <label class="consent"><input type="checkbox" name="consent" required> I agree to storage of my email for TradeKarma pilot and project updates. <a href="/privacy.html">Privacy details</a>.</label>
+          <label class="honeypot" aria-hidden="true">Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+          <p class="wl-note" id="waitlist-note" role="status" hidden></p>
+        </form>
+      </div>
+    </div>
+
+    <div class="foot-bottom">
+      <nav class="foot-links" aria-label="Footer">
+        <a href="/whitepaper.html">White Paper</a>
+        <a href="/privacy.html">Privacy</a>
+        <a href="/business-model.html">Business model</a>
+      </nav>
+      <small>© 2026 TradeKarma · Basel, Switzerland</small>
+    </div>
+  </div>
+</footer>
+
+<script src="/assets/site.js" defer></script>
 </body>
 </html>
